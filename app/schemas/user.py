@@ -1,9 +1,9 @@
 from pydantic import BaseModel, EmailStr, ConfigDict, Field
-
+from uuid import UUID
 
 class UserCreate(BaseModel):
     email: EmailStr
-    username: str = Field(min_lenght=3, max_length=50)
+    username: str = Field(min_length=3, max_length=50)
     password: str = Field(min_length=8, max_length=128)
     full_name: str | None = Field(default=None, max_length=100)
 
@@ -12,7 +12,7 @@ class UserLogin(BaseModel):
     password: str
 
 class UserResponse(BaseModel):
-    id: str
+    id: UUID
     email: EmailStr
     username: str
     full_name: str | None

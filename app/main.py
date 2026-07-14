@@ -1,8 +1,12 @@
 from fastapi import FastAPI
+
+from app.api.v1.router import api_router
 from sqlalchemy import text
 from app.database.database import engine
 
-app = FastAPI()
+app = FastAPI(
+    title="E-commerce Backend API",
+)
 
 @app.get("/")
 async def root():
@@ -24,3 +28,4 @@ async def health():
             "error": str(e)
         }
     
+app.include_router(api_router, prefix="/api/v1",)
