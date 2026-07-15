@@ -21,4 +21,7 @@ class UserResponse(BaseModel):
 
     model_config = ConfigDict(from_attributes=True) # This allows the model to be created from an ORM object, such as a SQLAlchemy model.
 
+class Token(BaseModel):
+    access_token: str
+    token_type: str
 
