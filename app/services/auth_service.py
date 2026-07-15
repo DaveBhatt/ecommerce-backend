@@ -3,6 +3,7 @@ from app.core.security import hash_password
 from app.models.user import User
 from app.repositories.user_repository import user_repository
 from app.schemas import UserCreate
+from app.exceptions.auth import EmailAlreadyExistsError, UsernameAlreadyExistsError, InvalidCredentialsError
 
 class AuthService:
     
@@ -11,12 +12,12 @@ class AuthService:
         existing_email = user_repository.get_by_email(db, user_data.email,)
 
         if existing_email:
-            raise ValueError("Email already registered")
+            raise EmailAlreadyExistsError()
         
         existing_username = user_repository.get_by_username(db, user_data.username,)
 
         if existing_username:
-            raise ValueError("Username already exists")
+            raise UsernameAlreadyExistsError()
         
         hashed_password = hash_password(user_data.password)
 
