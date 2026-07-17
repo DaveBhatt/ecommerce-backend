@@ -4,3 +4,9 @@ from .user import (
     UserResponse,
     Token,
 )
+
+from .category import (
+    CategoryCreate,
+    CategoryUpdate,
+    CategoryResponse,
+)
