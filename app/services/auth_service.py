@@ -35,6 +35,12 @@ class AuthService:
 
 
     def authenticate_user(self, db: Session, email: str, password: str,) -> str:
+        
+        """This method:
+        looks up the user
+        verifies the password
+        creates a JWT
+        returns the token"""
 
         user = user_repository.get_by_email(db, email,)
 
@@ -45,7 +51,7 @@ class AuthService:
             password,
             user.hashed_password,
         ):
-            return InvalidCredentialsError
+            raise InvalidCredentialsError
         
         return create_access_token(
             {
