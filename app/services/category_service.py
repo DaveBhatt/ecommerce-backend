@@ -1,0 +1,103 @@
+from uuid import UUID
+
+from fastapi import HTTPException, status 
+from sqlalchemy.orm import Session
+
+from app.models.category import Category
+from app.repositories.category_repository import category_repository
+from app.schemas.category import CategoryCreate, CategoryUpdate, CategoryResponse
+from app.utils.slug import generate_slug
+
+class CategoryService:
+
+    def create_category(self, db: Session, category_data: CategoryCreate,) -> Category:
+        """Responsibilities:
+
+        Check if the name already exists.
+        Generate a slug.
+        Create the ORM object.
+        Save it via the repository.
+        Return the created category.
+
+        Notice that slug generation belongs in the service, not in the repository."""
+
+        existing_category = category_repository.get_by_name(
+            db,
+            category_data.name,
+        )
+
+        if existing_category:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Category already exists.",
+            )
+        
+        category = Category(
+            name=category_data.name,
+            sllug=generate_slug(category_data.name),
+            description=category_data.description,
+        )
+
+        return category_repository.create(db, category)
+    
+
+    def get_catgory(self, db: Session, category_id: UUID,) -> Category:
+        
+        category = category_repository.get_by_id(
+            db,
+            category_id,
+        )
+
+        if category is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Category not found",
+            )
+        
+        return category
+    
+
+    def list_categories(self, db: Session,) -> list[Category]:
+        
+        return category_repository.get_all(db)
+
+
+    def update_category(self, db: Session, category_id: UUID, category_data: CategoryUpdate,) -> Category:
+
+        category = self.get_catgory(db, category_id)
+        update_data = category_data.model_dump(exclude_unset=True)
+
+        if "name" in update_data:
+            existing_category = category_repository.get_by_name(
+                db,
+                update_data["name"],
+            )
+            if (existing_category and existing_category.id != category.id):
+
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Category already exists.",
+                )
+            
+            category.slug = generate_slug(update_data["name"])
+
+        for field, value in update_data.items():
+            setattr(category, field, value)
+
+        return category_repository.update(
+            db,
+            category,
+        )
+    
+
+    def delete_category(self, db: Session, category_id: UUID,) -> Category:
+        
+        category = self.get_catgory(
+            db,
+            category_id,
+        )
+
+        return category_repository.delete(db, category,)
+    
+
+category_service = CategoryService()
