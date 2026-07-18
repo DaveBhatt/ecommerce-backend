@@ -3,7 +3,7 @@ from datetime import datetime, timedelta, timezone
 from pwdlib import PasswordHash
 from pwdlib.hashers.bcrypt import BcryptHasher
 
-from jose import JWTError, jwt  # type: ignore
+from jose import JWTError, jwt
 from app.core.config import settings
 
 password_hasher = PasswordHash((BcryptHasher(),))

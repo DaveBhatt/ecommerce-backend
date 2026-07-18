@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 
 from app.models.category import Category
 from app.repositories.category_repository import category_repository
-from app.schemas.category import CategoryCreate, CategoryUpdate, CategoryResponse
+from app.schemas.category import CategoryCreate, CategoryUpdate
 from app.utils.slug import generate_slug
 
 class CategoryService:
@@ -34,14 +34,14 @@ class CategoryService:
         
         category = Category(
             name=category_data.name,
-            sllug=generate_slug(category_data.name),
+            slug=generate_slug(category_data.name),
             description=category_data.description,
         )
 
         return category_repository.create(db, category)
     
 
-    def get_catgory(self, db: Session, category_id: UUID,) -> Category:
+    def get_category(self, db: Session, category_id: UUID,) -> Category:
         
         category = category_repository.get_by_id(
             db,
@@ -64,8 +64,8 @@ class CategoryService:
 
     def update_category(self, db: Session, category_id: UUID, category_data: CategoryUpdate,) -> Category:
 
-        category = self.get_catgory(db, category_id)
-        update_data = category_data.model_dump(exclude_unset=True)
+        category = self.get_category(db, category_id,)
+        update_data = category_data.model_dump(exclude_unset=True,)
 
         if "name" in update_data:
             existing_category = category_repository.get_by_name(
@@ -79,7 +79,7 @@ class CategoryService:
                     detail="Category already exists.",
                 )
             
-            category.slug = generate_slug(update_data["name"])
+            category.slug = generate_slug(update_data["name"],)
 
         for field, value in update_data.items():
             setattr(category, field, value)
@@ -92,7 +92,7 @@ class CategoryService:
 
     def delete_category(self, db: Session, category_id: UUID,) -> Category:
         
-        category = self.get_catgory(
+        category = self.get_category(
             db,
             category_id,
         )

@@ -8,5 +8,3 @@ def generate_slug(text: str) -> str:
     
     """
     return slugify(text)
-
-print(generate_slug("Gaming Laptop"))

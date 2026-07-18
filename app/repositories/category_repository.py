@@ -21,7 +21,7 @@ class CategoryRepository:
         return (db.query(Category).filter(Category.name == name).first())
     
     def get_all(self, db: Session,):
-        return db.query(Category).all()
+        return db.query(Category).filter(Category.is_active == True).all()
 
     def update(self, db: Session, category: Category,) -> Category:
         db.commit()
