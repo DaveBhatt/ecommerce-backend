@@ -1,8 +1,13 @@
+from typing import TYPE_CHECKING
+
 from sqlalchemy import Boolean, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database.base import Base
 from app.models.base import UUIDMixin, TimestampMixin
+
+if TYPE_CHECKING:
+    from app.models.product import Product
 
 class Category(UUIDMixin, TimestampMixin, Base):
     __tablename__ = "categories"
@@ -31,7 +36,7 @@ class Category(UUIDMixin, TimestampMixin, Base):
         nullable=False,
     )
 
-    # products = relationship(
-    #     "Product",
-    #     back_populates="category",
-    # )
+    products: Mapped[list["Product"]] = relationship(
+        "Product",
+        back_populates="category",
+    )
