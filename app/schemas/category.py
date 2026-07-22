@@ -1,10 +1,10 @@
 from uuid import UUID
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class CategoryCreate(BaseModel):
-    name: str
-    description: str | None = None
+    name: str = Field(min_length=2, max_length=100, description="Category name",)
+    description: str | None = Field(default=None, max_length=500, description="Category description",)
 
 class CategoryUpdate(BaseModel):
     name: str | None = None

@@ -4,11 +4,14 @@ from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.models.category import Category
-from app.repositories.category_repository import category_repository
+from app.repositories.category_repository import CategoryRepository, category_repository
 from app.schemas.category import CategoryCreate, CategoryUpdate
 from app.utils.slug import generate_slug
 
 class CategoryService:
+
+    def __init__(self, category_repository: CategoryRepository,):
+        self.category_repository = category_repository
 
     def create_category(self, db: Session, category_data: CategoryCreate,) -> Category:
         """Responsibilities:
@@ -21,7 +24,7 @@ class CategoryService:
 
         Notice that slug generation belongs in the service, not in the repository."""
 
-        existing_category = category_repository.get_by_name(
+        existing_category = self.category_repository.get_by_name(
             db,
             category_data.name,
         )
@@ -38,12 +41,12 @@ class CategoryService:
             description=category_data.description,
         )
 
-        return category_repository.create(db, category)
+        return self.category_repository.create(db, category)
     
 
     def get_category(self, db: Session, category_id: UUID,) -> Category:
         
-        category = category_repository.get_by_id(
+        category = self.category_repository.get_by_id(
             db,
             category_id,
         )
@@ -59,7 +62,7 @@ class CategoryService:
 
     def list_categories(self, db: Session,) -> list[Category]:
         
-        return category_repository.get_all(db)
+        return self.category_repository.get_all(db)
 
 
     def update_category(self, db: Session, category_id: UUID, category_data: CategoryUpdate,) -> Category:
@@ -68,7 +71,7 @@ class CategoryService:
         update_data = category_data.model_dump(exclude_unset=True,)
 
         if "name" in update_data:
-            existing_category = category_repository.get_by_name(
+            existing_category = self.category_repository.get_by_name(
                 db,
                 update_data["name"],
             )
@@ -84,7 +87,7 @@ class CategoryService:
         for field, value in update_data.items():
             setattr(category, field, value)
 
-        return category_repository.update(
+        return self.category_repository.update(
             db,
             category,
         )
@@ -97,7 +100,7 @@ class CategoryService:
             category_id,
         )
 
-        return category_repository.delete(db, category,)
+        return self.category_repository.delete(db, category,)
     
 
-category_service = CategoryService()
+category_service = CategoryService(category_repository)

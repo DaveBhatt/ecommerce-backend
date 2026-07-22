@@ -1,21 +1,24 @@
 from sqlalchemy.orm import Session
 from app.core.security import hash_password
 from app.models.user import User
-from app.repositories.user_repository import user_repository
+from app.repositories.user_repository import UserRepository, user_repository
 from app.schemas import UserCreate
 from app.exceptions.auth import EmailAlreadyExistsError, UsernameAlreadyExistsError, InvalidCredentialsError
 from app.core.security import verify_password, verify_access_token, create_access_token
 
 class AuthService:
+
+    def __init__(self, user_repository: UserRepository,):
+        self.user_repository = user_repository
     
     def register_user(self, db: Session, user_data: UserCreate,) -> User:
         
-        existing_email = user_repository.get_by_email(db, user_data.email,)
+        existing_email = self.user_repository.get_by_email(db, user_data.email,)
 
         if existing_email:
             raise EmailAlreadyExistsError()
         
-        existing_username = user_repository.get_by_username(db, user_data.username,)
+        existing_username = self.user_repository.get_by_username(db, user_data.username,)
 
         if existing_username:
             raise UsernameAlreadyExistsError()
@@ -29,7 +32,7 @@ class AuthService:
             full_name=user_data.full_name,
         )
 
-        return user_repository.create(db, user)
+        return self.user_repository.create(db, user)
 
 
 
@@ -42,7 +45,7 @@ class AuthService:
         creates a JWT
         returns the token"""
 
-        user = user_repository.get_by_email(db, email,)
+        user = self.user_repository.get_by_email(db, email,)
 
         if user is None:
             raise InvalidCredentialsError()
@@ -64,4 +67,4 @@ class AuthService:
 
 
 
-auth_service = AuthService()
+auth_service = AuthService(user_repository)
