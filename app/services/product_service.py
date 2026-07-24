@@ -1,3 +1,4 @@
+import logging
 from uuid import UUID
 
 from fastapi import HTTPException, status
@@ -9,6 +10,7 @@ from app.repositories.category_repository import category_repository
 from app.schemas.product import ProductCreate, ProductUpdate
 from app.utils.slug import generate_slug
 
+logger = logging.getLogger(__name__)
 
 class ProductService:
 
@@ -19,6 +21,7 @@ class ProductService:
 
     def create_product(self, db: Session, product_data: ProductCreate,) -> Product:
 
+        logger.info("Creating product with SKU=%s", product_data.sku)
         """
         API
          │
@@ -55,6 +58,10 @@ class ProductService:
         )
 
         if existing_product:
+            logger.warning(
+                "Product creation failed. Duplicate SKU=%s",
+                product_data.sku,
+            )
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="SKU already exists.",
@@ -69,6 +76,12 @@ class ProductService:
             category_id=product_data.category_id,
         )
 
+        logger.info(
+            "Product created successfully. ID=%s SKU=%s",
+            product.id,
+            product.sku,
+        )
+        
         return self.product_repository.create(db=db, product=product,)
     
     
