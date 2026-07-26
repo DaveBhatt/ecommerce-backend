@@ -1,13 +1,15 @@
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.orm import Session
 
 from app.dependencies.auth import get_current_user
 from app.database.session import get_db
 from app.models.user import User
 from app.schemas.product import ProductCreate, ProductResponse, ProductUpdate
+from app.schemas.pagination import PaginatedResponse
 from app.services.product_service import product_service
+
 
 router = APIRouter(
     prefix="/products",
@@ -22,10 +24,18 @@ def create_product(product_data: ProductCreate, db: Session = Depends(get_db), c
         product_data=product_data,
     )
 
-@router.get("", response_model=list[ProductResponse], status_code=status.HTTP_200_OK,)
-def get_all_products(db: Session = Depends(get_db),):
+@router.get("", response_model=PaginatedResponse[ProductResponse], status_code=status.HTTP_200_OK,)
+def get_all_products(
+    page: int = Query(1, ge=1),
+    size: int = Query(10, ge=1, le=100),
+    db: Session = Depends(get_db),
+):
 
-    return product_service.get_all_products(db=db)
+    return product_service.get_all_products(
+        db=db,
+        page=page,
+        size=size,
+    )
 
 @router.get("/{product_id}", response_model=ProductResponse, status_code=status.HTTP_200_OK,)
 def get_product_by_id(product_id: UUID, db: Session = Depends(get_db),):

@@ -22,8 +22,13 @@ class ProductRepository:
     def get_by_name(self, db: Session, name: str,) -> Product | None:
         return(db.query(Product).filter(Product.name == name).first())
     
-    def get_all(self, db: Session,) -> list[Product]:
-        return(db.query(Product).filter(Product.is_active == True).all())
+    def get_all(self, db: Session, skip: int = 0, limit: int = 10,) -> list[Product]:
+        return(db.query(Product)
+               .filter(Product.is_active.is_(True))
+               .offset(skip)
+               .limit(limit)
+               .all()
+            )
     
     def update(self, db: Session, product: Product,) -> Product:
         db.commit()
@@ -35,6 +40,13 @@ class ProductRepository:
         db.commit()
         db.refresh(product)
         return product
+    
+    def count(self, db: Session) -> int:
+        return(
+            db.query(Product)
+            .filter(Product.is_active.is_(True))
+            .count()
+        )
     
 
 product_repository = ProductRepository()

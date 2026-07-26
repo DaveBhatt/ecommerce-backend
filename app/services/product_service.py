@@ -1,3 +1,4 @@
+from math import ceil
 import logging
 from uuid import UUID
 
@@ -81,7 +82,7 @@ class ProductService:
             product.id,
             product.sku,
         )
-        
+
         return self.product_repository.create(db=db, product=product,)
     
     
@@ -102,11 +103,32 @@ class ProductService:
         
         return product
     
-    def get_all_products(self, db: Session,) -> list[Product]:
+    def get_all_products(self, db: Session, page: int = 1, size: int = 10,) -> dict:
 
         """Returns list (possibly empty)"""
 
-        return self.product_repository.get_all(db)
+        skip = (page - 1) * size
+        logger.info(
+            "Fetching products page=%s size=%s",
+            page,
+            size,
+        )
+
+        products =  self.product_repository.get_all(
+            db=db,
+            skip=skip,
+            limit=size,
+        )
+        
+        total = self.product_repository.count(db=db,)
+
+        return {
+            "items": products,
+            "total": total,
+            "page": page,
+            "size": size,
+            "pages": ceil(total / size) if total else 0, 
+        }
 
     def update_product(self, db: Session, product_id: UUID, product_data: ProductUpdate,) -> Product:
 
