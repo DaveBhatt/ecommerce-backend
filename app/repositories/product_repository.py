@@ -22,9 +22,15 @@ class ProductRepository:
     def get_by_name(self, db: Session, name: str,) -> Product | None:
         return(db.query(Product).filter(Product.name == name).first())
     
-    def get_all(self, db: Session, skip: int = 0, limit: int = 10,) -> list[Product]:
-        return(db.query(Product)
-               .filter(Product.is_active.is_(True))
+    def get_all(self, db: Session, skip: int = 0, limit: int = 10, category_id: UUID | None = None,) -> list[Product]:
+        
+        query = db.query(Product).filter(Product.is_active.is_(True))
+
+        if category_id is not None:
+            query = query.filter(Product.category_id == category_id)
+
+        return(
+               query
                .offset(skip)
                .limit(limit)
                .all()
@@ -41,12 +47,14 @@ class ProductRepository:
         db.refresh(product)
         return product
     
-    def count(self, db: Session) -> int:
-        return(
-            db.query(Product)
-            .filter(Product.is_active.is_(True))
-            .count()
-        )
+    def count(self, db: Session, category_id: UUID | None = None,) -> int:
+        
+        query  = db.query(Product).filter(Product.is_active.is_(True))
+
+        if category_id is not None:
+            query = query.filter(Product.category_id == category_id)
+
+        return query.count()
     
 
 product_repository = ProductRepository()

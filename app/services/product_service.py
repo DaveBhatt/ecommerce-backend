@@ -103,24 +103,30 @@ class ProductService:
         
         return product
     
-    def get_all_products(self, db: Session, page: int = 1, size: int = 10,) -> dict:
+    def get_all_products(self, db: Session, page: int = 1, size: int = 10, category_id: UUID | None = None,) -> dict:
 
         """Returns list (possibly empty)"""
 
         skip = (page - 1) * size
+        
         logger.info(
-            "Fetching products page=%s size=%s",
+            "Fetching products page=%s size=%s category=%s",
             page,
             size,
+            category_id,
         )
 
         products =  self.product_repository.get_all(
             db=db,
             skip=skip,
             limit=size,
+            category_id=category_id,
         )
-        
-        total = self.product_repository.count(db=db,)
+
+        total = self.product_repository.count(
+            db=db,
+            category_id=category_id,
+        )
 
         return {
             "items": products,

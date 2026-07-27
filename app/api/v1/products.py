@@ -28,6 +28,7 @@ def create_product(product_data: ProductCreate, db: Session = Depends(get_db), c
 def get_all_products(
     page: int = Query(1, ge=1),
     size: int = Query(10, ge=1, le=100),
+    category_id: UUID | None = Query(default=None), 
     db: Session = Depends(get_db),
 ):
 
@@ -35,6 +36,7 @@ def get_all_products(
         db=db,
         page=page,
         size=size,
+        category_id=category_id,
     )
 
 @router.get("/{product_id}", response_model=ProductResponse, status_code=status.HTTP_200_OK,)
