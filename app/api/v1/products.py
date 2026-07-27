@@ -1,4 +1,5 @@
 from uuid import UUID
+from decimal import Decimal
 
 from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.orm import Session
@@ -28,7 +29,9 @@ def create_product(product_data: ProductCreate, db: Session = Depends(get_db), c
 def get_all_products(
     page: int = Query(1, ge=1),
     size: int = Query(10, ge=1, le=100),
-    category_id: UUID | None = Query(default=None), 
+    category_id: UUID | None = Query(default=None),
+    min_price: Decimal | None = Query(default=None, ge=0),
+    max_price: Decimal | None = Query(default=None, ge=0),
     db: Session = Depends(get_db),
 ):
 
@@ -37,6 +40,8 @@ def get_all_products(
         page=page,
         size=size,
         category_id=category_id,
+        min_price=min_price,
+        max_price=max_price,
     )
 
 @router.get("/{product_id}", response_model=ProductResponse, status_code=status.HTTP_200_OK,)

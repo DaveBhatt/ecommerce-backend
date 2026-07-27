@@ -1,4 +1,5 @@
 from math import ceil
+from decimal import Decimal
 import logging
 from uuid import UUID
 
@@ -103,17 +104,27 @@ class ProductService:
         
         return product
     
-    def get_all_products(self, db: Session, page: int = 1, size: int = 10, category_id: UUID | None = None,) -> dict:
+    def get_all_products(
+            self, 
+            db: Session, 
+            page: int = 1, 
+            size: int = 10, 
+            category_id: UUID | None = None,
+            min_price: Decimal | None = None,
+            max_price: Decimal | None = None,
+    ) -> dict:
 
         """Returns list (possibly empty)"""
 
         skip = (page - 1) * size
-        
+
         logger.info(
-            "Fetching products page=%s size=%s category=%s",
+            "Fetching products page=%s size=%s category=%s min_price=%s max_price=%s",
             page,
             size,
             category_id,
+            min_price,
+            max_price,
         )
 
         products =  self.product_repository.get_all(
@@ -121,11 +132,15 @@ class ProductService:
             skip=skip,
             limit=size,
             category_id=category_id,
+            min_price=min_price,
+            max_price=max_price,
         )
 
         total = self.product_repository.count(
             db=db,
             category_id=category_id,
+            min_price=min_price,
+            max_price=max_price,
         )
 
         return {
