@@ -33,6 +33,10 @@ def get_all_products(
     min_price: Decimal | None = Query(default=None, ge=0),
     max_price: Decimal | None = Query(default=None, ge=0),
     search: str | None = Query(default=None, min_length=1),
+    sort: str | None = Query(
+        default=None,
+        description="Allowed: name, -name, price, -price, created_at, -created_at,"
+    ),
     db: Session = Depends(get_db),
 ):
 
@@ -44,6 +48,7 @@ def get_all_products(
         min_price=min_price,
         max_price=max_price,
         search=search,
+        sort=sort,
     )
 
 @router.get("/{product_id}", response_model=ProductResponse, status_code=status.HTTP_200_OK,)

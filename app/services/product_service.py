@@ -113,6 +113,7 @@ class ProductService:
             min_price: Decimal | None = None,
             max_price: Decimal | None = None,
             search: str | None = None,
+            sort: str | None = None,
     ) -> dict:
 
         """Returns list (possibly empty)"""
@@ -120,13 +121,14 @@ class ProductService:
         skip = (page - 1) * size
 
         logger.info(
-            "Fetching products page=%s size=%s category=%s min_price=%s max_price=%s search=%s",
+            "Fetching products page=%s size=%s category=%s min_price=%s max_price=%s search=%s sort=%s",
             page,
             size,
             category_id,
             min_price,
             max_price,
             search,
+            sort,
         )
 
         products =  self.product_repository.get_all(
@@ -136,7 +138,8 @@ class ProductService:
             category_id=category_id,
             min_price=min_price,
             max_price=max_price,
-            search= search,
+            search=search,
+            sort=sort
         )
 
         total = self.product_repository.count(

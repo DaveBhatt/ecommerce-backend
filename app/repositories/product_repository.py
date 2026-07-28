@@ -33,6 +33,7 @@ class ProductRepository:
             min_price: Decimal | None = None,
             max_price: Decimal | None = None,
             search: str | None = None,
+            sort: str | None = None,
     ) -> list[Product]:
         
         query = db.query(Product).filter(Product.is_active.is_(True))
@@ -54,6 +55,26 @@ class ProductRepository:
                     Product.sku.ilike(f"%{search}%"),
                 )
             )
+        
+        sort_columns = {
+            "name": Product.name,
+            "price": Product.price,
+            "created_at": Product.created_at,
+        } 
+
+        if sort:
+            descending = sort.startswith("-")
+            field = sort[1:] if descending else sort
+
+            if field in sort_columns:
+                column = sort_columns[field]
+
+                query = query.order_by(
+                    column.desc() if descending else column.asc()
+                )
+        else:
+            query = query.order_by(Product.created_at.desc())
+            
         return(
                query
                .offset(skip)
