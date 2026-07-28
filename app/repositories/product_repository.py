@@ -36,25 +36,13 @@ class ProductRepository:
             sort: str | None = None,
     ) -> list[Product]:
         
-        query = db.query(Product).filter(Product.is_active.is_(True))
-
-        if category_id is not None:
-            query = query.filter(Product.category_id == category_id)
-
-        if min_price is not None:
-            query = query.filter(Product.price >= min_price)
-
-        if max_price is not None:
-            query = query.filter(Product.price <= max_price)
-
-        if search:
-            query = query.filter(
-                or_(
-                    Product.name.ilike(f"%{search}%"),
-                    Product.description.ilike(f"%{search}%"),
-                    Product.sku.ilike(f"%{search}%"),
-                )
-            )
+        query = self._build_query(
+            db=db,
+            category_id=category_id,
+            min_price=min_price,
+            max_price=max_price,
+            search=search,
+        )
         
         sort_columns = {
             "name": Product.name,
@@ -74,7 +62,7 @@ class ProductRepository:
                 )
         else:
             query = query.order_by(Product.created_at.desc())
-            
+
         return(
                query
                .offset(skip)
@@ -102,7 +90,38 @@ class ProductRepository:
             search: str | None = None,
     ) -> int:
         
-        query  = db.query(Product).filter(Product.is_active.is_(True))
+        query  = self._build_query(
+            db=db,
+            category_id=category_id,
+            min_price=min_price,
+            max_price=max_price,
+            search=search,
+        )
+
+        return query.count()
+    
+    def _build_query(
+            self,
+            db: Session,
+            category_id: UUID | None = None,
+            min_price: Decimal | None = None,
+            max_price: Decimal | None = None,
+            search: str | None = None,
+    ):
+        
+        """
+            _build_query()
+                │
+                ▼
+        returns filtered query
+                │
+           ┌────┴────┐
+           ▼         ▼
+        get_all()   count()
+        
+        """
+
+        query = db.query(Product).filter(Product.is_active.is_(True))
 
         if category_id is not None:
             query = query.filter(Product.category_id == category_id)
@@ -121,9 +140,7 @@ class ProductRepository:
                     Product.sku.ilike(f"%{search}%"),
                 )
             )
-
-        return query.count()
-    
+        return query
 
 
 product_repository = ProductRepository()
