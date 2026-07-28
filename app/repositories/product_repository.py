@@ -1,6 +1,7 @@
 from uuid import UUID
 from decimal import Decimal
 from sqlalchemy.orm import Session
+from sqlalchemy import or_
 from app.models.product import Product
 
 class ProductRepository:
@@ -31,6 +32,7 @@ class ProductRepository:
             category_id: UUID | None = None,
             min_price: Decimal | None = None,
             max_price: Decimal | None = None,
+            search: str | None = None,
     ) -> list[Product]:
         
         query = db.query(Product).filter(Product.is_active.is_(True))
@@ -43,6 +45,15 @@ class ProductRepository:
 
         if max_price is not None:
             query = query.filter(Product.price <= max_price)
+
+        if search:
+            query = query.filter(
+                or_(
+                    Product.name.ilike(f"%{search}%"),
+                    Product.description.ilike(f"%{search}%"),
+                    Product.sku.ilike(f"%{search}%"),
+                )
+            )
         return(
                query
                .offset(skip)
@@ -67,6 +78,7 @@ class ProductRepository:
             category_id: UUID | None = None,
             min_price: Decimal | None = None,
             max_price: Decimal | None = None,
+            search: str | None = None,
     ) -> int:
         
         query  = db.query(Product).filter(Product.is_active.is_(True))
@@ -79,6 +91,15 @@ class ProductRepository:
 
         if max_price is not None:
             query = query.filter(Product.price <= max_price)
+
+        if search:
+            query = query.filter(
+                or_(
+                    Product.name.ilike(f"%{search}%"),
+                    Product.description.ilike(f"%{search}%"),
+                    Product.sku.ilike(f"%{search}%"),
+                )
+            )
 
         return query.count()
     
