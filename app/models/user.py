@@ -1,8 +1,13 @@
+from typing import TYPE_CHECKING
+
 from sqlalchemy import String, Boolean
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database.base import Base
 from app.models.base import UUIDMixin, TimestampMixin
+
+if TYPE_CHECKING:
+    from app.models.cart import Cart
 
 class User(UUIDMixin, TimestampMixin, Base):
     __tablename__ = "users"
@@ -48,7 +53,8 @@ class User(UUIDMixin, TimestampMixin, Base):
         nullable=False,
     )
 
-    # created_at: Mapped[str] = mapped_column(
-    #     String(50),
-
-    # )
+    cart: Mapped["Cart"] = relationship(
+        "Cart",
+        back_populates="user",
+        uselist=False,  # this tells SQLAlchemy this is a one-to-one relationship. 
+    )
