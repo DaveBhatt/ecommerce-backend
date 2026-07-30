@@ -1,6 +1,8 @@
 from .user import User
 from .category import Category
 from .product import Product
+from .cart import Cart
+from .cart_item import CartItem
 
 # This ensures Alembic can discover the model.
 
