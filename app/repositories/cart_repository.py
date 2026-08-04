@@ -33,6 +33,8 @@ class CartRepository:
             .filter(Cart.user_id == user_id)
             .first()
         )
+        # This query uses selectinload() to eagerly load the cart_items and their associated products in a single query.
+        # The .filter(Cart.user_id == user_id) ensures that we only fetch the cart for the specified user.
         """
         selectinload produces separate SQL queries using WHERE IN (...).
 
@@ -53,6 +55,22 @@ class CartRepository:
         one-to-one relationships
         
         """
+
+    def get_cart_item(self, db: Session, cart_id: UUID, product_id: UUID,) -> CartItem | None:
+
+        return (
+            db.query(CartItem)
+            .filter(CartItem.cart_id == cart_id, 
+                    CartItem.product_id == product_id)
+                    .first()
+                )
+
+    def create_cart_item(self, db: Session, cart_item: CartItem,) -> CartItem:
+
+        db.add(cart_item)
+        db.commit()
+        db.refresh(cart_item)
+        return cart_item
 
     def save(self, db: Session,) -> None:
         
