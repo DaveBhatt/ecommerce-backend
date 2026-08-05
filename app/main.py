@@ -12,6 +12,7 @@ from app.exceptions.product import (
     ProductInactiveError,
     InsufficientStockError,
 )
+from app.exceptions.cart import CartItemNotFoundError
 from app.core.exception_handlers import (
     http_exception_handler,
     validation_exception_handler,
@@ -19,6 +20,7 @@ from app.core.exception_handlers import (
     product_not_found_handler,
     product_inactive_handler,
     insufficient_stock_handler,
+    cart_item_not_found_handler,
 )
 
 
@@ -44,6 +46,11 @@ app.add_exception_handler(
 app.add_exception_handler(
     InsufficientStockError,
     insufficient_stock_handler,
+)
+
+app.add_exception_handler(
+    CartItemNotFoundError,
+    cart_item_not_found_handler,
 )
 
 # Register global exception handlers

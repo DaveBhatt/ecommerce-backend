@@ -4,6 +4,7 @@ from fastapi.responses import JSONResponse
 from fastapi.encoders import jsonable_encoder
 
 from app.exceptions.product import ProductNotFoundError, ProductInactiveError, InsufficientStockError
+from app.exceptions.cart import CartItemNotFoundError
 
 from app.core.logging import logger
 
@@ -103,5 +104,21 @@ async def insufficient_stock_handler(request: Request, exc: InsufficientStockErr
                     "message": "Insufficient stock available.",
                 },
             }
+        ),
+    )
+
+
+async def cart_item_not_found_handler(request: Request, exc: CartItemNotFoundError,) -> JSONResponse:
+
+    return JSONResponse(
+        status_code=status.HTTP_404_NOT_FOUND,
+        content=jsonable_encoder(
+            {
+                "success": False,
+                "error": {
+                    "code": "CART_ITEM_NOT_FOUND",
+                    "message": "Cart item not found.",
+                },
+            }   
         ),
     )

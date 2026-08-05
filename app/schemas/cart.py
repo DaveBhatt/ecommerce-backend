@@ -33,4 +33,7 @@ class AddCartItemRequest(BaseModel):
     quantity: int = Field(ge=1)
 
 class UpdateCartItemRequest(BaseModel):
-    quantity: int = Field(ge=1)
+    quantity: int = Field(
+        ge=0,
+        description="New quantity. Use 0 to remove the item.",
+    )

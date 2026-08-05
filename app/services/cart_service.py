@@ -10,7 +10,7 @@ from app.repositories.cart_repository import cart_repository
 from app.repositories.product_repository import product_repository
 
 from app.exceptions.product import ProductNotFoundError, ProductInactiveError, InsufficientStockError
-
+from app.exceptions.cart import CartItemNotFoundError
 
 class CartService:
 
@@ -226,6 +226,100 @@ class CartService:
             db=db,
             user_id=user_id,
         )
+
+    def update_quantity(self, db: Session, user_id: UUID, cart_item_id: UUID, quantity: int,) -> dict:
+
+        """
+        PATCH /cart/items/{id}
+                    │
+                    ▼
+        Find CartItem
+                    │
+              Exists?
+              │     │
+             No    Yes
+              │      │
+              ▼      ▼
+        404      Owner?
+                   │
+              No ──┘
+              │
+              ▼
+        404
+
+        Owner
+           │
+           ▼
+        Quantity == 0 ?
+             │
+         ┌───┴────┐
+         │        │
+        Yes      No
+         │        │
+        Delete   Check Stock
+         │        │
+         └────┬───┘
+              ▼
+         Save Changes
+              ▼
+         Return Cart
+        
+        """
+
+        logger.info(
+            "Updating quantity for cart item %s to %s",
+            cart_item_id,
+            quantity,
+        )
+
+        cart_item = self.cart_repository.get_cart_item_by_id(
+            db=db,
+            cart_item_id=cart_item_id,
+        )
+
+        if cart_item is None:
+            raise CartItemNotFoundError()
+
+        # Security check
+        if cart_item.cart.user_id != user_id:
+            raise CartItemNotFoundError()
+
+        # Quantity = 0 means remove the item from the cart
+        if quantity == 0:
+            self.cart_repository.remove_item(
+                db=db,
+                cart_item=cart_item,
+            )
+
+            logger.info(
+                "Removed cart item %s because its quantity became 0",
+                cart_item_id,
+            )
+
+            return self.get_cart(
+                db=db,
+                user_id=user_id,
+            )
+
+        # Check stock
+        if quantity > cart_item.product.stock_quantity:
+            raise InsufficientStockError()
+
+        cart_item.quantity = quantity
+
+        self.cart_repository.save(db)
+
+        logger.info(
+            "Updated quantity for cart item %s to %s",
+            cart_item_id,
+            quantity,
+        )
+
+        return self.get_cart(
+            db=db,
+            user_id=user_id,
+        )
+
 
     
 cart_service = CartService()

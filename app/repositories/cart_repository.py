@@ -72,9 +72,25 @@ class CartRepository:
         db.refresh(cart_item)
         return cart_item
 
+    def get_cart_item_by_id(self, db: Session, cart_item_id: UUID,) -> CartItem | None:
+
+        return (
+            db.query(CartItem)
+            .filter(CartItem.id == cart_item_id)
+            .first()
+        )
+
+    def remove_item(self, db: Session, cart_item: CartItem,) -> None:
+        
+        db.delete(cart_item)
+        db.commit()
+
     def save(self, db: Session,) -> None:
         
         db.commit()
+
+    
+    
 
 
 cart_repository = CartRepository()
