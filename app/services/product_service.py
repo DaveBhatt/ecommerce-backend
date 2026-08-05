@@ -1,6 +1,6 @@
 from math import ceil
 from decimal import Decimal
-import logging
+from app.core.logging import logger
 from uuid import UUID
 
 from fastapi import HTTPException, status
@@ -12,7 +12,6 @@ from app.repositories.category_repository import category_repository
 from app.schemas.product import ProductCreate, ProductUpdate
 from app.utils.slug import generate_slug
 
-logger = logging.getLogger(__name__)
 
 class ProductService:
 

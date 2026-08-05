@@ -1,6 +1,6 @@
 from decimal import Decimal
 from uuid import UUID
-import logging
+from app.core.logging import logger
 
 from sqlalchemy.orm import Session
 from app.models.cart import Cart
@@ -9,7 +9,6 @@ from app.models.cart_item import CartItem
 from app.repositories.cart_repository import cart_repository
 from app.repositories.product_repository import product_repository
 
-logger = logging.getLogger(__name__)
 
 
 class CartService:
@@ -91,6 +90,42 @@ class CartService:
         )
 
     def add_item(self, db: Session, user_id: UUID, product_id: UUID, quantity: int,) -> dict:
+
+        """
+        POST /cart/items
+                │
+                ▼
+        Get/Create Cart
+                │
+                ▼
+        Find Product
+                │
+                ├── Not found → Error
+                │
+                ▼
+        Is Active?
+                │
+                ├── No → Error
+                │
+                ▼
+        Enough Stock?
+                │
+                ├── No → Error
+                │
+                ▼
+        Already in Cart?
+              ┌─┴─────────────┐
+              │               │
+             Yes             No
+              │               │
+        Increase Qty     Create Item
+              │               │
+              └───────┬───────┘
+                      ▼
+                   Save Changes
+                      ▼
+                 Return Cart
+        """
 
         logger.info(
             "Adding product %s (quantity %s) to cart for user %s",

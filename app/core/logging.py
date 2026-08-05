@@ -10,3 +10,5 @@ def setup_logging() -> None:
             "%(message)s | "
         ),
     )
+
+logger = logging.getLogger("ecommerce_backend")

@@ -3,6 +3,8 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from fastapi.encoders import jsonable_encoder
 
+from app.core.logging import logger
+
 
 async def http_exception_handler(request: Request, exc: HTTPException,) -> JSONResponse: 
     
@@ -35,6 +37,13 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
 
 
 async def general_exception_handler(request: Request, exc: Exception,) -> JSONResponse:
+
+    logger.exception(
+        "Unhandled exception while processing %s %s: %s",
+        request.method,
+        request.url.path,
+        exc,
+    )
 
     return JSONResponse(
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
