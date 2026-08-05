@@ -54,7 +54,7 @@ class AuthService:
             password,
             user.hashed_password,
         ):
-            raise InvalidCredentialsError
+            raise InvalidCredentialsError()
         
         return create_access_token(
             {

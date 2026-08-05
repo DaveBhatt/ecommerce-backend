@@ -9,6 +9,7 @@ from app.models.cart_item import CartItem
 from app.repositories.cart_repository import cart_repository
 from app.repositories.product_repository import product_repository
 
+from app.exceptions.product import ProductNotFoundError, ProductInactiveError, InsufficientStockError
 
 
 class CartService:
@@ -151,7 +152,7 @@ class CartService:
                 "Product %s not found",
                 product_id,
             )
-            raise ValueError("Product not found")
+            raise ProductNotFoundError()
 
         # Product must be active
         if not product.is_active:
@@ -159,7 +160,7 @@ class CartService:
                 "Attempt to add inactive product %s to cart",
                 product_id,
             )
-            raise ValueError("Product is inactive")
+            raise ProductInactiveError()
 
         # Validate requested quantity against stock
         if quantity > product.stock_quantity:
@@ -169,7 +170,7 @@ class CartService:
                 product.stock_quantity,
                 product_id,
             )
-            raise ValueError("Insufficient stock")
+            raise InsufficientStockError()
 
         # Check whether the product is already in the cart
         cart_item = self.cart_repository.get_cart_item(
@@ -189,7 +190,7 @@ class CartService:
                     product.stock_quantity,
                     product_id,
                 )
-                raise ValueError("Insufficient stock")
+                raise InsufficientStockError()
 
             cart_item.quantity = new_quantity
 

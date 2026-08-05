@@ -7,7 +7,20 @@ from sqlalchemy import text
 
 from app.api.v1.router import api_router
 from app.database.database import engine
-from app.core.exception_handlers import http_exception_handler, validation_exception_handler, general_exception_handler
+from app.exceptions.product import (
+    ProductNotFoundError,
+    ProductInactiveError,
+    InsufficientStockError,
+)
+from app.core.exception_handlers import (
+    http_exception_handler,
+    validation_exception_handler,
+    general_exception_handler,
+    product_not_found_handler,
+    product_inactive_handler,
+    insufficient_stock_handler,
+)
+
 
 from app.core.logging import setup_logging
 
@@ -17,21 +30,38 @@ app = FastAPI(
     title="E-commerce Backend API",
 )
 
+
+app.add_exception_handler(
+    ProductNotFoundError,
+    product_not_found_handler,
+)
+
+app.add_exception_handler(
+    ProductInactiveError,
+    product_inactive_handler,
+)
+
+app.add_exception_handler(
+    InsufficientStockError,
+    insufficient_stock_handler,
+)
+
 # Register global exception handlers
 app.add_exception_handler(
     HTTPException,
-    cast(ExceptionHandler, http_exception_handler),
+    http_exception_handler,
 )
 
 app.add_exception_handler(
     RequestValidationError,
-    cast(ExceptionHandler, validation_exception_handler),
+    validation_exception_handler,
 )
 
 app.add_exception_handler(
     Exception,
-    cast(ExceptionHandler, general_exception_handler),
+    general_exception_handler,
 )
+
 
 @app.get("/")
 async def root():

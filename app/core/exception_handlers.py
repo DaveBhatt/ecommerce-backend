@@ -3,6 +3,8 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from fastapi.encoders import jsonable_encoder
 
+from app.exceptions.product import ProductNotFoundError, ProductInactiveError, InsufficientStockError
+
 from app.core.logging import logger
 
 
@@ -54,4 +56,52 @@ async def general_exception_handler(request: Request, exc: Exception,) -> JSONRe
                 "message": "An unexpected error occurred.",
             },
         }),
+    )
+
+
+async def product_not_found_handler(request: Request, exc: ProductNotFoundError,) -> JSONResponse:
+
+    return JSONResponse(
+        status_code=status.HTTP_404_NOT_FOUND,
+        content=jsonable_encoder(
+            {
+                "success": False,
+                "error": {
+                    "code": "PRODUCT_NOT_FOUND",
+                    "message": "Product not found.",
+                },
+            }
+        ),
+    )
+
+
+async def product_inactive_handler(request: Request, exc: ProductInactiveError,) -> JSONResponse:
+
+    return JSONResponse(
+        status_code=status.HTTP_400_BAD_REQUEST,
+        content=jsonable_encoder(
+            {
+                "success": False,
+                "error": {
+                    "code": "PRODUCT_INACTIVE",
+                    "message": "Product is inactive.",
+                },
+            }
+        ),
+    )
+
+
+async def insufficient_stock_handler(request: Request, exc: InsufficientStockError,) -> JSONResponse:
+
+    return JSONResponse(
+        status_code=status.HTTP_400_BAD_REQUEST,
+        content=jsonable_encoder(
+            {
+                "success": False,
+                "error": {
+                    "code": "INSUFFICIENT_STOCK",
+                    "message": "Insufficient stock available.",
+                },
+            }
+        ),
     )
