@@ -42,3 +42,12 @@ def update_cart_item(cart_item_id: UUID, request: UpdateCartItemRequest, db: Ses
         cart_item_id=cart_item_id,
         quantity=request.quantity,
     )
+
+@router.delete("/items/{cart_item_id}", response_model=CartResponse, status_code=status.HTTP_200_OK,)
+def remove_cart_item(cart_item_id: UUID, db: Session = Depends(get_db), current_user: User = Depends(get_current_user),):
+
+    return cart_service.remove_item(
+        db=db,
+        user_id=current_user.id,
+        cart_item_id=cart_item_id,
+    )

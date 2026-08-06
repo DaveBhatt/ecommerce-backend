@@ -321,7 +321,41 @@ class CartService:
         )
 
 
-    
+    def remove_item(self, db: Session, user_id: UUID, cart_item_id: UUID,) -> dict:
+
+        logger.info(
+            "Removing cart item %s",
+            cart_item_id,
+        )
+
+        cart_item = self.cart_repository.get_cart_item_by_id(
+            db=db,
+            cart_item_id=cart_item_id,
+        )
+
+        if cart_item is None:
+            raise CartItemNotFoundError()
+
+        # Ownership check
+        if cart_item.cart.user_id != user_id:
+            raise CartItemNotFoundError()
+
+        self.cart_repository.remove_item(
+            db=db,
+            cart_item=cart_item,
+        )
+
+        logger.info(
+            "Removed cart item %s",
+            cart_item_id,
+        )
+
+        return self.get_cart(
+            db=db,
+            user_id=user_id,
+        )
+
+        
 cart_service = CartService()
 
 
