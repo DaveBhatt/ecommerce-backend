@@ -51,3 +51,11 @@ def remove_cart_item(cart_item_id: UUID, db: Session = Depends(get_db), current_
         user_id=current_user.id,
         cart_item_id=cart_item_id,
     )
+
+@router.delete("", response_model=CartResponse, status_code=status.HTTP_200_OK,)
+def clear_cart(db: Session = Depends(get_db), current_user: User = Depends(get_current_user),):
+
+    return cart_service.clear_cart(
+        db=db,
+        user_id=current_user.id,
+    )

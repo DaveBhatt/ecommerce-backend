@@ -85,6 +85,11 @@ class CartRepository:
         db.delete(cart_item)
         db.commit()
 
+    def clear_cart(self, db: Session, cart: Cart,) -> None:
+
+        cart.cart_items.clear() # Because of relationship cascade="all, delete-orphan" between Cart and CartItem, the cart's items are deleted.
+        db.commit()
+
     def save(self, db: Session,) -> None:
         
         db.commit()

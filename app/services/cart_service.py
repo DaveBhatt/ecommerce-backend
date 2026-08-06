@@ -355,6 +355,34 @@ class CartService:
             user_id=user_id,
         )
 
+
+    def clear_cart(self, db: Session, user_id: UUID,) -> dict:
+
+        logger.info(
+            "Clearing cart for user %s",
+            user_id,
+        )
+
+        cart = self.get_or_create_cart(
+            db=db,
+            user_id=user_id,
+        )   
+        # This is a performance optimization. We don't need to fetch the cart from the database if it doesn't exist.
+
+        self.cart_repository.clear_cart(
+            db=db,
+            cart=cart,
+        )
+
+        logger.info(
+            "Cart cleared for user %s",
+            user_id,
+        )
+
+        return self.get_cart(
+            db=db,
+            user_id=user_id,
+        )
         
 cart_service = CartService()
 
