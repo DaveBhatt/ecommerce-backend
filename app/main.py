@@ -12,6 +12,11 @@ from app.exceptions.product import (
     ProductInactiveError,
     InsufficientStockError,
 )
+from app.exceptions.order import (
+    OrderNotFoundError,
+    EmptyCartError,
+    CartNotFoundError,
+)
 from app.exceptions.cart import CartItemNotFoundError
 from app.core.exception_handlers import (
     http_exception_handler,
