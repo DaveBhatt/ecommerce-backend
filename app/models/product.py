@@ -11,6 +11,7 @@ from app.models.base import UUIDMixin, TimestampMixin
 
 if TYPE_CHECKING:
     from app.models.category import Category
+    from app.models.order_item import OrderItem
 
 class Product(UUIDMixin, TimestampMixin, Base):
     __tablename__ = "products"
@@ -75,4 +76,9 @@ class Product(UUIDMixin, TimestampMixin, Base):
     category: Mapped["Category"] = relationship(
         "Category",
         back_populates="products",
+    )
+
+    order_items: Mapped["OrderItem"] = relationship(
+        "OrderItem",
+        back_populates="product",
     )

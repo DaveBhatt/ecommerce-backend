@@ -8,6 +8,7 @@ from app.models.base import UUIDMixin, TimestampMixin
 
 if TYPE_CHECKING:
     from app.models.cart import Cart
+    from app.models.order import Order
 
 class User(UUIDMixin, TimestampMixin, Base):
     __tablename__ = "users"
@@ -57,4 +58,9 @@ class User(UUIDMixin, TimestampMixin, Base):
         "Cart",
         back_populates="user",
         uselist=False,  # this tells SQLAlchemy this is a one-to-one relationship. 
+    )
+
+    orders: Mapped["Order"] = relationship(
+        "Order",
+        back_populates="user",
     )
