@@ -15,9 +15,11 @@ from app.exceptions.product import (
 from app.exceptions.order import (
     OrderNotFoundError,
     EmptyCartError,
-    CartNotFoundError,
 )
-from app.exceptions.cart import CartItemNotFoundError
+from app.exceptions.cart import (
+    CartNotFoundError,
+    CartItemNotFoundError
+)
 from app.core.exception_handlers import (
     http_exception_handler,
     validation_exception_handler,
@@ -26,6 +28,9 @@ from app.core.exception_handlers import (
     product_inactive_handler,
     insufficient_stock_handler,
     cart_item_not_found_handler,
+    order_not_found_handler,
+    empty_cart_handler,
+    cart_not_found_handler,
 )
 
 
@@ -37,6 +42,20 @@ app = FastAPI(
     title="E-commerce Backend API",
 )
 
+app.add_exception_handler(
+    OrderNotFoundError,
+    order_not_found_handler,
+)
+
+app.add_exception_handler(
+    EmptyCartError,
+    empty_cart_handler,
+)
+
+app.add_exception_handler(
+    CartNotFoundError,
+    cart_not_found_handler,
+)
 
 app.add_exception_handler(
     ProductNotFoundError,

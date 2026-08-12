@@ -10,7 +10,7 @@ from app.repositories.cart_repository import cart_repository
 from app.repositories.product_repository import product_repository
 
 from app.exceptions.product import ProductNotFoundError, ProductInactiveError, InsufficientStockError
-from app.exceptions.cart import CartItemNotFoundError
+from app.exceptions.cart import CartNotFoundError, CartItemNotFoundError
 
 class CartService:
 

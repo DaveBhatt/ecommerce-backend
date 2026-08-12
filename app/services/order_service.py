@@ -40,7 +40,8 @@ from app.repositories.product_repository import product_repository
 
 from app.schemas.order import CreateOrderRequest
 
-from app.exceptions.order import OrderNotFoundError, EmptyCartError, CartNotFoundError
+from app.exceptions.order import OrderNotFoundError, EmptyCartError
+from app.exceptions.cart import CartNotFoundError
 from app.exceptions.product import ProductNotFoundError, ProductInactiveError, InsufficientStockError
 
 class OrderService:
@@ -55,7 +56,7 @@ class OrderService:
         self.order_repository = order_repository
         self.product_repository = product_repository
 
-    def create_order(self, db: Session, user_id: UUID, order_data: CreateOrderRequest,) -> Order:
+    def create_order(self, db: Session, user_id: UUID, order_data: CreateOrderRequest,) -> dict:
 
         logger.info(
             "Creating order for user %s",
@@ -166,7 +167,7 @@ class OrderService:
                 total_amount,
             )
 
-            return order
+            return self._to_order_response(order)
 
         except Exception:
             db.rollback()
@@ -178,6 +179,56 @@ class OrderService:
 
             raise
 
+    def get_user_orders(self, db: Session, user_id: UUID,) -> list[Order]:
+
+        logger.info(
+            "Fetching orders for user %s",
+            user_id,
+        )
+
+        return self.order_repository.get_all_by_user_id(
+            db=db,
+            user_id=user_id,
+        )
+
+    def get_order(self, db: Session, order_id: UUID, user_id: UUID,) -> dict:
+
+        logger.info(
+            "Fetching order %s for user %s",
+            order_id,
+            user_id,
+        )
+
+        order = self.order_repository.get_by_id_for_user(
+            db=db,
+            order_id=order_id,
+            user_id=user_id,
+        )
+
+        if order is None:
+            logger.warning(
+                "Order %s not found for user %s",
+                order_id,
+                user_id,
+            )
+            raise OrderNotFoundError()
+
+        return self._to_order_response(order)
+
+    def _to_order_response(self, order: Order,) -> dict:
+
+        return {
+            "id": order.id,
+            "user_id": order.user_id,
+            "status": order.status,
+            "total_amount": order.total_amount,
+            "shipping_address": order.shipping_address,
+            "items": order.order_items,
+            "created_at": order.created_at,
+            "updated_at": order.updated_at,
+        }
+    
+        
 
 order_service = OrderService()
 
