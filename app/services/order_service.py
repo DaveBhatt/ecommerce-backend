@@ -1,30 +1,3 @@
-""" Workflow for creating an order
-POST /orders
-     │
-     ▼
-OrderService.create_order()
-     │
-     ├── Get user's cart
-     │
-     ├── Check cart
-     │
-     ├── Validate products
-     │
-     ├── Validate stock
-     │
-     ├── Calculate total
-     │
-     ├── Create Order
-     │
-     ├── Create OrderItems
-     │
-     ├── Decrease stock
-     │
-     ├── Clear cart
-     │
-     └── Commit transaction
-"""
-
 from decimal import Decimal
 from uuid import UUID
 
@@ -73,6 +46,32 @@ class OrderService:
         self.product_repository = product_repository
 
     def create_order(self, db: Session, user_id: UUID, order_data: CreateOrderRequest,) -> dict:
+
+        """
+        POST /orders
+             │
+             ▼
+        OrderService.create_order()
+             │
+             ├── Get user's cart
+             │
+             ├── Check cart
+             │
+             ├── Validate products
+             │
+             ├── Validate stock
+             │
+             ├── Calculate total
+             │
+             ├── Create Order
+             │
+             ├── Create OrderItems
+             │
+             ├── Decrease stock
+             │
+             ├── Clear cart
+             │
+             └── Commit transaction"""
 
         logger.info(
             "Creating order for user %s",
@@ -298,17 +297,27 @@ class OrderService:
     def cancel_order(self, db: Session, order_id: UUID, user_id: UUID,) -> dict:
 
         """
-        JWT
-         ↓
-        current_user.id
-         ↓
-        get_by_id_for_user()
-         ↓
-        only user's order
-         ↓
-        check transition
-         ↓
-        cancel"""
+        POST /orders/{id}/cancel
+                  ↓
+        Authenticate user
+                  ↓
+        Find user's order
+                  ↓
+        Check current status
+                  ↓
+        Can it be cancelled?
+                  ↓
+        YES
+                  ↓
+        Mark CANCELLED
+                  ↓
+        For every OrderItem
+                  ↓
+        Restore Product stock
+                  ↓
+        Commit transaction
+                  ↓
+        Return order"""
 
         logger.info(
             "Cancelling order %s for user %s",
@@ -345,10 +354,34 @@ class OrderService:
             )
             raise InvalidOrderStatusTransitionError()
 
-        order.status = OrderStatus.CANCELLED
+        try:
 
-        db.commit()
-        db.refresh(order)
+            # Restore stock
+            for order_item in order.order_items:
+                product = order_item.product
+    
+                logger.info(
+                    "Restoring stock for product %s by %s units due to cancellation of order %s",
+                    product.id,
+                    order_item.quantity,
+                    order_id,
+                )
+                product.stock_quantity += order_item.quantity
+    
+            order.status = OrderStatus.CANCELLED
+    
+            db.commit()
+            db.refresh(order)
+    
+        except Exception:
+            db.rollback()
+
+            logger.exception(
+                "Failed to cancer order %s",
+                order_id,
+            )
+
+            raise
 
         logger.info(
             "Order %s cancelled successfully",
@@ -356,7 +389,6 @@ class OrderService:
         )
 
         return self._to_order_response(order)
-    
 
 order_service = OrderService()
 
