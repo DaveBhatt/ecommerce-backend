@@ -15,6 +15,7 @@ from app.exceptions.product import (
 from app.exceptions.order import (
     OrderNotFoundError,
     EmptyCartError,
+    InvalidOrderStatusTransitionError,
 )
 from app.exceptions.cart import (
     CartNotFoundError,
@@ -27,10 +28,11 @@ from app.core.exception_handlers import (
     product_not_found_handler,
     product_inactive_handler,
     insufficient_stock_handler,
+    cart_not_found_handler,
     cart_item_not_found_handler,
     order_not_found_handler,
     empty_cart_handler,
-    cart_not_found_handler,
+    invalid_order_status_transition_handler,
 )
 
 
@@ -40,6 +42,11 @@ setup_logging()
 
 app = FastAPI(
     title="E-commerce Backend API",
+)
+
+app.add_exception_handler(
+    InvalidOrderStatusTransitionError,
+    invalid_order_status_transition_handler,
 )
 
 app.add_exception_handler(

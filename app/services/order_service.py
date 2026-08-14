@@ -1,4 +1,4 @@
-""" WORKFLOW
+""" Workflow for creating an order
 POST /orders
      │
      ▼
@@ -40,9 +40,25 @@ from app.repositories.product_repository import product_repository
 
 from app.schemas.order import CreateOrderRequest
 
-from app.exceptions.order import OrderNotFoundError, EmptyCartError
+from app.exceptions.order import OrderNotFoundError, EmptyCartError, InvalidOrderStatusTransitionError
 from app.exceptions.cart import CartNotFoundError
 from app.exceptions.product import ProductNotFoundError, ProductInactiveError, InsufficientStockError
+
+ALLOWED_ORDER_TRANSITIONS = {
+    OrderStatus.PENDING: {
+        OrderStatus.PAID,
+        OrderStatus.CANCELLED,
+    },
+    OrderStatus.PAID: {
+        OrderStatus.SHIPPED,
+        OrderStatus.CANCELLED,
+    },
+    OrderStatus.SHIPPED: {
+        OrderStatus.DELIVERED,
+    },
+    OrderStatus.DELIVERED: set(), # Delivery is final (Terminal State)
+    OrderStatus.CANCELLED: set(), # Cancellation is final (Terminal State)
+}
 
 class OrderService:
 
@@ -228,7 +244,119 @@ class OrderService:
             "updated_at": order.updated_at,
         }
     
-        
+
+    def update_status(self, db: Session, order_id: UUID, new_status: OrderStatus,) -> dict:
+
+        logger.info(
+            "Updating order %s to status %s",
+            order_id,
+            new_status,
+        )
+
+        order = self.order_repository.get_by_id(
+            db=db,
+            order_id=order_id,
+        )
+
+        if order is None:
+            logger.warning(
+                "Order %s not found",
+                order_id,
+            )
+            raise OrderNotFoundError()
+
+        old_status = order.status
+
+        allowed_statuses = ALLOWED_ORDER_TRANSITIONS.get(
+            old_status,
+            set(),
+        ) # The set() is a placeholder for the allowed statuses. It will be replaced with the actual allowed statuses.
+
+        if new_status not in allowed_statuses:
+            logger.warning(
+                "Invalid order status transition. %s -> %s",
+                old_status,
+                new_status,
+            )
+            raise InvalidOrderStatusTransitionError()
+
+        order.status = new_status
+
+        db.commit()
+        db.refresh(order)
+
+        logger.info(
+            "Order %s status updated from %s to %s",
+            order_id,
+            old_status,
+            new_status,
+        )
+
+        return self._to_order_response(order)
+
+
+    def cancel_order(self, db: Session, order_id: UUID, user_id: UUID,) -> dict:
+
+        """
+        JWT
+         ↓
+        current_user.id
+         ↓
+        get_by_id_for_user()
+         ↓
+        only user's order
+         ↓
+        check transition
+         ↓
+        cancel"""
+
+        logger.info(
+            "Cancelling order %s for user %s",
+            order_id,
+            user_id,
+        )
+
+        order = self.order_repository.get_by_id_for_user(
+            db=db,
+            order_id=order_id,
+            user_id=user_id,
+        )
+
+        if order is None:    
+            logger.warning(
+                "Order %s not found for user %s",
+                order_id,
+                user_id,
+            )
+            raise OrderNotFoundError()
+
+        old_status = order.status
+
+        allowed_statuses = ALLOWED_ORDER_TRANSITIONS.get(
+            old_status,
+            set(),
+        )
+
+        if OrderStatus.CANCELLED not in allowed_statuses:
+            logger.warning(
+                "Order %s cannot be cancelled from status %s",
+                order_id,
+                old_status,
+            )
+            raise InvalidOrderStatusTransitionError()
+
+        order.status = OrderStatus.CANCELLED
+
+        db.commit()
+        db.refresh(order)
+
+        logger.info(
+            "Order %s cancelled successfully",
+            order_id,
+        )
+
+        return self._to_order_response(order)
+    
 
 order_service = OrderService()
 

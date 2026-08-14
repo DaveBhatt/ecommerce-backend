@@ -5,7 +5,7 @@ from fastapi.encoders import jsonable_encoder
 
 from app.exceptions.product import ProductNotFoundError, ProductInactiveError, InsufficientStockError
 from app.exceptions.cart import CartNotFoundError, CartItemNotFoundError
-from app.exceptions.order import OrderNotFoundError, EmptyCartError
+from app.exceptions.order import OrderNotFoundError, EmptyCartError, InvalidOrderStatusTransitionError
 
 from app.core.logging import logger
 
@@ -163,6 +163,21 @@ async def empty_cart_handler(request: Request, exc: EmptyCartError,) -> JSONResp
                 "error": {
                     "code": "EMPTY_CART",
                     "message": "Cannot create an order from an empty cart.",
+                },
+            }
+        ),
+    )
+
+async def invalid_order_status_transition_handler(request: Request, exc: InvalidOrderStatusTransitionError,) -> JSONResponse:
+
+    return JSONResponse(
+        status_code=status.HTTP_400_BAD_REQUEST,
+        content=jsonable_encoder(
+            {
+                "success": False,
+                "error": {
+                    "code": "INVALID_ORDER_STATUS_TRANSITION",
+                    "message": "Invalid order status transition.",
                 },
             }
         ),

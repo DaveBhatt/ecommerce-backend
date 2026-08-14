@@ -38,3 +38,12 @@ def get_order(order_id: UUID, current_user: User = Depends(get_current_user), db
         order_id=order_id,
         user_id=current_user.id,
     )
+
+@router.post("/{order_id}/cancel", response_model=OrderResponse, status_code=status.HTTP_200_OK,)
+def cancel_order(order_id: UUID, current_user: User = Depends(get_current_user), db: Session = Depends(get_db),):
+
+    return order_service.cancel_order(
+        db=db,
+        order_id=order_id,
+        user_id=current_user.id,
+    )
