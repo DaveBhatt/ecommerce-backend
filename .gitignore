@@ -1,6 +1,46 @@
 .venv/
 __pycache__/
+*.py[cod]
 .env
 .pytest_cache/
 .mypy_cache/
 .vscode/
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Virtual environment
+.venv/
+venv/
+env/
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Build
+build/
+dist/
+*.egg-info/
+
+# PostgreSQL / local data
+postgres_data/
