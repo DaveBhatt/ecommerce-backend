@@ -21,15 +21,14 @@ class OrderRepository:
 
         return (
             db.query(Order)
-            .options(
-                selectinload(Order.order_items)
-                .selectinload(OrderItem.product)
-            )
+            # .options(
+            #     selectinload(Order.order_items)
+            #     .selectinload(OrderItem.product)
+            # )
             .filter(Order.id == order_id)
             .first()
         )
-        # This query uses selectinload() to eagerly load the order_items and their associated products in a single query.
-        
+                
 
     def get_by_id_for_user(self, db: Session, order_id: UUID, user_id: UUID,) -> Order | None:
 
@@ -55,6 +54,7 @@ class OrderRepository:
             )
             .first()
         )
+        # This query uses selectinload() to eagerly load the order_items and their associated products in a single query.
 
     def get_all_by_user_id(self, db: Session, user_id: UUID,) -> list[Order]:
 
