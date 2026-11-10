@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.database.session import get_db
+from app.database.session import get_async_db
 from app.schemas import UserCreate, UserResponse, UserLogin, Token
 from app.services.auth_service import auth_service
 from app.exceptions.auth import EmailAlreadyExistsError, UsernameAlreadyExistsError, InvalidCredentialsError
@@ -12,11 +12,10 @@ router = APIRouter(
 )
 
 @router.post("/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED,)
-
-def register(user: UserCreate, db: Session = Depends(get_db)):
+async def register(user: UserCreate, db: AsyncSession = Depends(get_async_db)):
 
     try:
-        return auth_service.register_user(db, user,)
+        return await auth_service.register_user(db, user,)
     
     except EmailAlreadyExistsError:
         raise HTTPException(
@@ -31,11 +30,10 @@ def register(user: UserCreate, db: Session = Depends(get_db)):
         )
 
 @router.post("/login", response_model=Token,)
-
-def login(credentials: UserLogin, db: Session = Depends(get_db),):
+async def login(credentials: UserLogin, db: AsyncSession = Depends(get_async_db),):
 
     try:
-        token = auth_service.authenticate_user(
+        token = await auth_service.authenticate_user(
             db,
             credentials.email,
             credentials.password,

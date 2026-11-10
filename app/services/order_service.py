@@ -1,7 +1,8 @@
+import math
 from decimal import Decimal
 from uuid import UUID
 
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.logging import logger
 from app.models.order import Order, OrderStatus
@@ -37,7 +38,7 @@ class OrderService:
 
     def __init__(self):
         """
-        Dependency Injection 
+        Dependency Injection
         Using __init__ makes it easier to swap implementations
         later and improves testability.
         """
@@ -45,7 +46,7 @@ class OrderService:
         self.order_repository = order_repository
         self.product_repository = product_repository
 
-    def create_order(self, db: Session, user_id: UUID, order_data: CreateOrderRequest,) -> dict:
+    async def create_order(self, db: AsyncSession, user_id: UUID, order_data: CreateOrderRequest,) -> dict:
 
         """
         POST /orders
@@ -81,7 +82,7 @@ class OrderService:
         try:
 
             # Get user's cart with items and products.
-            cart = self.cart_repository.get_cart_with_items(
+            cart = await self.cart_repository.get_cart_with_items(
                 db=db,
                 user_id=user_id,
             )
@@ -123,7 +124,7 @@ class OrderService:
                     )
                     raise ProductInactiveError()
 
-                # check stock
+                # Check stock
                 if cart_item.quantity > product.stock_quantity:
                     logger.warning(
                         "Checkout failed. Requested quantity (%s) exceeds stock (%s) for product %s",
@@ -135,8 +136,9 @@ class OrderService:
 
                 total_amount += (
                     product.price * cart_item.quantity
-                )    
+                )
 
+            # Create Order
             order = Order(
                 user_id=user_id,
                 status=OrderStatus.PENDING,
@@ -144,12 +146,12 @@ class OrderService:
                 shipping_address=order_data.shipping_address,
             )
 
-            self.order_repository.create(
+            await self.order_repository.create(
                 db=db,
                 order=order,
             )
 
-            # create OrderItems
+            # Create OrderItems and deduct inventory
             for cart_item in cart.cart_items:
 
                 product = cart_item.product
@@ -170,10 +172,15 @@ class OrderService:
 
                 product.stock_quantity -= cart_item.quantity
 
-            cart.cart_items.clear() # Because of relationship cascade="all, delete-orphan" between Cart and CartItem, the cart's items are deleted.
+            # Clear cart, cart items were explicitly loaded by the repository
+            await self.cart_repository.clear_cart(
+                db=db,
+                cart=cart,
+            )
 
-            db.commit()
-            db.refresh(order)
+            # Commit the transaction
+            await db.commit()
+            # db.refresh(order)
 
             logger.info(
                 "Order created successfully. Order ID: %s User ID: %s Total Amount: %s",
@@ -182,10 +189,20 @@ class OrderService:
                 total_amount,
             )
 
-            return self._to_order_response(order)
+            # Reload the order with its relationship
+            created_order = await self.order_repository.get_by_id_for_user(
+                db=db,
+                order_id=order.id,
+                user_id=user_id,
+            )
+
+            if created_order is None:
+                raise OrderNotFoundError()
+
+            return self._to_order_response(created_order)
 
         except Exception:
-            db.rollback()
+            await db.rollback()
 
             logger.exception(
                 "Order creation failed for user %s",
@@ -194,19 +211,43 @@ class OrderService:
 
             raise
 
-    def get_user_orders(self, db: Session, user_id: UUID,) -> list[Order]:
+    async def get_user_orders(self, db: AsyncSession, user_id: UUID, page: int = 1, size: int = 10,) -> dict:
 
         logger.info(
             "Fetching orders for user %s",
             user_id,
         )
 
-        return self.order_repository.get_all_by_user_id(
+        skip = (page - 1) * size
+
+        orders = await self.order_repository.get_all_by_user_id(
+            db=db,
+            user_id=user_id,
+            skip=skip,
+            limit=size,
+        )
+
+        total = await self.order_repository.count_by_user_id(
             db=db,
             user_id=user_id,
         )
 
-    def get_order(self, db: Session, order_id: UUID, user_id: UUID,) -> dict:
+        pages = math.ceil(total / size) if total > 0 else 0
+
+        logger.info(
+            f"Retrieved orders for user {user_id}: "
+            f"page={page}, size={size}, total={total}"
+        )
+
+        return {
+            "items": orders,
+            "total": total,
+            "page": page,
+            "size": size,
+            "pages": pages,
+        }
+
+    async def get_order(self, db: AsyncSession, order_id: UUID, user_id: UUID,) -> dict:
 
         logger.info(
             "Fetching order %s for user %s",
@@ -214,7 +255,7 @@ class OrderService:
             user_id,
         )
 
-        order = self.order_repository.get_by_id_for_user(
+        order = await self.order_repository.get_by_id_for_user(
             db=db,
             order_id=order_id,
             user_id=user_id,
@@ -242,9 +283,9 @@ class OrderService:
             "created_at": order.created_at,
             "updated_at": order.updated_at,
         }
-    
 
-    def update_status(self, db: Session, order_id: UUID, new_status: OrderStatus,) -> dict:
+
+    async def update_status(self, db: AsyncSession, order_id: UUID, new_status: OrderStatus,) -> dict:
 
         logger.info(
             "Updating order %s to status %s",
@@ -252,7 +293,7 @@ class OrderService:
             new_status,
         )
 
-        order = self.order_repository.get_by_id(
+        order = await self.order_repository.get_by_id(
             db=db,
             order_id=order_id,
         )
@@ -281,8 +322,8 @@ class OrderService:
 
         order.status = new_status
 
-        db.commit()
-        db.refresh(order)
+        await db.commit()
+        # db.refresh(order)
 
         logger.info(
             "Order %s status updated from %s to %s",
@@ -294,7 +335,7 @@ class OrderService:
         return self._to_order_response(order)
 
 
-    def cancel_order(self, db: Session, order_id: UUID, user_id: UUID,) -> dict:
+    async def cancel_order(self, db: AsyncSession, order_id: UUID, user_id: UUID,) -> dict:
 
         """
         POST /orders/{id}/cancel
@@ -325,13 +366,13 @@ class OrderService:
             user_id,
         )
 
-        order = self.order_repository.get_by_id_for_user(
+        order = await self.order_repository.get_by_id_for_user(
             db=db,
             order_id=order_id,
             user_id=user_id,
         )
 
-        if order is None:    
+        if order is None:
             logger.warning(
                 "Order %s not found for user %s",
                 order_id,
@@ -359,7 +400,7 @@ class OrderService:
             # Restore stock
             for order_item in order.order_items:
                 product = order_item.product
-    
+
                 logger.info(
                     "Restoring stock for product %s by %s units due to cancellation of order %s",
                     product.id,
@@ -367,14 +408,14 @@ class OrderService:
                     order_id,
                 )
                 product.stock_quantity += order_item.quantity
-    
+
             order.status = OrderStatus.CANCELLED
-    
-            db.commit()
-            db.refresh(order)
-    
+
+            await db.commit()
+            # db.refresh(order)
+
         except Exception:
-            db.rollback()
+            await db.rollback()
 
             logger.exception(
                 "Failed to cancer order %s",
@@ -390,5 +431,5 @@ class OrderService:
 
         return self._to_order_response(order)
 
-order_service = OrderService()
 
+order_service = OrderService()

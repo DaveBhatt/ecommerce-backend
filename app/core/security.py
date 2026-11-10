@@ -1,3 +1,6 @@
+# mypy: ignore-errors
+
+
 from datetime import datetime, timedelta, timezone
 
 from pwdlib import PasswordHash

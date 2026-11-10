@@ -1,37 +1,62 @@
 from uuid import UUID
-from sqlalchemy.orm import Session
-from app.models.category import Category
 
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.models.category import Category
 
 class CategoryRepository:
 
-    def create(self, db: Session, category: Category,) -> Category:
+    async def create(self, db: AsyncSession, category: Category,) -> Category:
+
         db.add(category)
-        db.commit()
-        db.refresh(category)
+        await db.commit()
+        await db.refresh(category)
         return category
 
-    def get_by_id(self, db:Session, category_id: UUID,) -> Category | None:
-        return (db.query(Category).filter(Category.id == category_id).first())
+    async def get_by_id(self, db:AsyncSession, category_id: UUID,) -> Category | None:
 
-    def get_by_slug(self, db: Session, slug: str,) -> Category | None:
-        return (db.query(Category).filter(Category.slug == slug).first())
+        result = await db.execute(
+            select(Category).where(Category.id == category_id)
+        )
 
-    def get_by_name(self, db:Session, name: str, ) -> Category | None:
-        return (db.query(Category).filter(Category.name == name).first())
-    
-    def get_all(self, db: Session,):
-        return db.query(Category).filter(Category.is_active == True).all()
+        return result.scalar_one_or_none()
 
-    def update(self, db: Session, category: Category,) -> Category:
-        db.commit()
-        db.refresh(category)
+    async def get_by_slug(self, db: AsyncSession, slug: str,) -> Category | None:
+
+        result = await db.execute(
+            select(Category).where(Category.slug == slug)
+        )
+
+        return result.scalar_one_or_none()
+
+    async def get_by_name(self, db:AsyncSession, name: str, ) -> Category | None:
+
+        result = await db.execute(
+            select(Category).where(Category.name == name)
+        )
+
+        return result.scalar_one_or_none()
+
+    async def get_all(self, db: AsyncSession,) -> list[Category]:
+
+        result = await db.execute(
+            select(Category).where(Category.is_active == True)
+        )
+
+        return list(result.scalars().all())
+
+    async def update(self, db: AsyncSession, category: Category,) -> Category:
+
+        await db.commit()
+        await db.refresh(category)
         return category
 
-    def delete(self, db: Session, category: Category,) -> Category:
+    async def delete(self, db: AsyncSession, category: Category,) -> Category:
+
         category.is_active = False
-        db.commit()
-        db.refresh(category)
+        await db.commit()
+        await db.refresh(category)
         return category
-    
+
 category_repository = CategoryRepository()

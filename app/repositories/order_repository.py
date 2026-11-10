@@ -1,36 +1,40 @@
 from uuid import UUID
 
-from sqlalchemy.orm import Session, selectinload
+from sqlalchemy import func, select
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
+
 from app.models.order import Order
 from app.models.order_item import OrderItem
 
 
 class OrderRepository:
 
-    def create(self, db: Session, order: Order,) -> Order:
+    async def create(self, db: AsyncSession, order: Order,) -> Order:
         db.add(order)
         # db.commit()
         # db.refresh(order)
-        db.flush() # This is the equivalent of commit() but without committing the transaction so we can rollback if needed.
+        await db.flush() # This is the equivalent of commit() but without committing the transaction so we can rollback if needed.
 
         return order
 
-    def get_by_id(self, db: Session, order_id: UUID,) -> Order | None:
+    async def get_by_id(self, db: AsyncSession, order_id: UUID,) -> Order | None:
 
         """Finds an order with the given ID."""
 
-        return (
-            db.query(Order)
-            # .options(
-            #     selectinload(Order.order_items)
-            #     .selectinload(OrderItem.product)
-            # )
-            .filter(Order.id == order_id)
-            .first()
+        result = await db.execute(
+            select(Order)
+            .options(
+                selectinload(Order.order_items)
+                .selectinload(OrderItem.product)
+            )
+            .where(Order.id == order_id)
         )
-                
 
-    def get_by_id_for_user(self, db: Session, order_id: UUID, user_id: UUID,) -> Order | None:
+        return result.scalar_one_or_none()
+
+
+    async def get_by_id_for_user(self, db: AsyncSession, order_id: UUID, user_id: UUID,) -> Order | None:
 
         """Finds an order with the given ID for the given user.
         Order ID matches?
@@ -43,29 +47,46 @@ class OrderRepository:
                ↓
         Return order"""
 
-        return (
-            db.query(Order)
+        result = await db.execute(
+            select(Order)
             .options(
                 selectinload(Order.order_items)
                 .selectinload(OrderItem.product)
             )
-            .filter(Order.id == order_id,
-                    Order.user_id == user_id,
+            .where(
+                Order.id == order_id,
+                Order.user_id == user_id,
             )
-            .first()
         )
         # This query uses selectinload() to eagerly load the order_items and their associated products in a single query.
 
-    def get_all_by_user_id(self, db: Session, user_id: UUID,) -> list[Order]:
+        return result.scalar_one_or_none()
 
-        """Finds all orders for the given user."""
+    async def get_all_by_user_id(self, db: AsyncSession, user_id: UUID, skip: int = 0, limit: int = 10,) -> list[Order]:
 
-        return (
-            db.query(Order)
-            .filter(Order.user_id == user_id)
-            .order_by(Order.created_at.desc())
-            .all()
+        """Finds all orders for the given user seperated by pagination."""
+
+        result = await db.execute(
+            select(Order)
+            .where(Order.user_id == user_id)
+            .order_by(
+                Order.created_at.desc(),
+                Order.id.desc(),
+            )
+            .offset(skip)
+            .limit(limit)
         )
+
+        return list(result.scalars().all())
+
+    async def count_by_user_id(self, db: AsyncSession, user_id: UUID,) -> int:
+
+        result = await db.execute(
+            select(func.count(Order.id))
+            .where(Order.user_id == user_id)
+        )
+
+        return result.scalar_one()
 
 
 order_repository = OrderRepository()

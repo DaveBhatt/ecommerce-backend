@@ -2,10 +2,10 @@ from uuid import UUID
 from decimal import Decimal
 
 from fastapi import APIRouter, Depends, Query, status
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.dependencies.auth import get_current_user
-from app.database.session import get_db
+from app.database.session import get_async_db
 from app.models.user import User
 from app.schemas.product import ProductCreate, ProductResponse, ProductUpdate
 from app.schemas.pagination import PaginatedResponse
@@ -18,15 +18,15 @@ router = APIRouter(
 )
 
 @router.post("", response_model=ProductResponse, status_code=status.HTTP_201_CREATED,)
-def create_product(product_data: ProductCreate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user),):
+async def create_product(product_data: ProductCreate, db: AsyncSession = Depends(get_async_db), current_user: User = Depends(get_current_user),):
     
-    return product_service.create_product(
+    return await product_service.create_product(
         db=db,
         product_data=product_data,
     )
 
 @router.get("", response_model=PaginatedResponse[ProductResponse], status_code=status.HTTP_200_OK,)
-def get_all_products(
+async def get_all_products(
     page: int = Query(1, ge=1),
     size: int = Query(10, ge=1, le=100),
     category_id: UUID | None = Query(default=None),
@@ -37,10 +37,10 @@ def get_all_products(
         default=None,
         description="Allowed: name, -name, price, -price, created_at, -created_at,"
     ),
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_async_db),
 ):
 
-    return product_service.get_all_products(
+    return await product_service.get_all_products(
         db=db,
         page=page,
         size=size,
@@ -52,26 +52,26 @@ def get_all_products(
     )
 
 @router.get("/{product_id}", response_model=ProductResponse, status_code=status.HTTP_200_OK,)
-def get_product_by_id(product_id: UUID, db: Session = Depends(get_db),):
+async def get_product_by_id(product_id: UUID, db: AsyncSession = Depends(get_async_db),):
 
-    return product_service.get_product_by_id(
+    return await product_service.get_product_by_id(
         db=db,
         product_id=product_id,
     )
 
 @router.patch("/{product_id}", response_model=ProductResponse, status_code=status.HTTP_200_OK,)
-def update_product(product_id: UUID, product_data: ProductUpdate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user),):
+async def update_product(product_id: UUID, product_data: ProductUpdate, db: AsyncSession = Depends(get_async_db), current_user: User = Depends(get_current_user),):
 
-    return product_service.update_product(
+    return await product_service.update_product(
         db=db,
         product_id=product_id,
         product_data=product_data,
     )
 
 @router.delete("/{product_id}", response_model=ProductResponse, status_code=status.HTTP_200_OK,)
-def delete_product(product_id: UUID, db: Session = Depends(get_db), current_user: User = Depends(get_current_user),):
+async def delete_product(product_id: UUID, db: AsyncSession = Depends(get_async_db), current_user: User = Depends(get_current_user),):
 
-    return product_service.delete_product(
+    return await product_service.delete_product(
         db=db,
         product_id=product_id,
     )

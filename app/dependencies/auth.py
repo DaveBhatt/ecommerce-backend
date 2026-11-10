@@ -3,19 +3,19 @@ from uuid import UUID
 from fastapi import Depends, HTTPException, status
 # from fastapi.security import OAuth2PasswordBearer
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.security import verify_access_token
-from app.database.session import get_db
+from app.database.session import get_async_db
 from app.repositories.user_repository import user_repository
 
 # oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login",)
 security = HTTPBearer()
 
-def get_current_user(
+async def get_current_user(
     # token: str = Depends(oauth2_scheme), 
     credentials: HTTPAuthorizationCredentials = Depends(security),
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_async_db),
 ):
     
     """This dependency performs three important checks:
@@ -35,7 +35,7 @@ def get_current_user(
             detail="Invalid authentication credentials",
         )
     
-    user = user_repository.get_by_id(db, user_id,)
+    user = await user_repository.get_by_id(db, user_id,)
 
     if user is None:
         raise HTTPException(

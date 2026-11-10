@@ -3,7 +3,7 @@ from decimal import Decimal
 from enum import Enum
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from app.schemas.product import ProductResponse
 
@@ -27,7 +27,21 @@ class CreateOrderRequest(BaseModel):
 
     """The cart already contains the products and quantities, so we don't need to pass those."""
 
-    shipping_address: str
+    shipping_address: str = Field(
+        min_length=10,
+        max_length=500,
+        description="Customer's complete shipping address",
+        examples=["432 Main Street, Parkson Boulevard, New Delhi, India"],
+    )
+
+    @field_validator("shipping_address", mode="before")
+    @classmethod
+    def validate_shipping_address(cls, value):
+
+        if isinstance(value, str):
+            value = value.strip()
+
+        return value
 
 class OrderResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
@@ -48,4 +62,3 @@ class OrderSummaryResponse(BaseModel):
     status: OrderStatus
     total_amount: Decimal
     created_at: datetime
-

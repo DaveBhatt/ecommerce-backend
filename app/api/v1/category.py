@@ -1,9 +1,9 @@
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, status
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.database.session import get_db
+from app.database.session import get_async_db
 from app.schemas.category import CategoryCreate, CategoryUpdate, CategoryResponse
 from app.services.category_service import category_service
 
@@ -42,40 +42,39 @@ returning the response
 
 
 @router.post("", response_model=CategoryResponse, status_code=status.HTTP_201_CREATED,)
-async def create_category(category_data: CategoryCreate, db: Session = Depends(get_db),):
+async def create_category(category_data: CategoryCreate, db: AsyncSession = Depends(get_async_db),):
     
-    return category_service.create_category(
+    return await category_service.create_category(
         db=db,
         category_data=category_data,
     ) 
 
 @router.get("", response_model=list[CategoryResponse],)
-async def get_categories(db: Session = Depends(get_db),):
+async def get_categories(db: AsyncSession = Depends(get_async_db),):
     
-    return category_service.list_categories(db)
+    return await category_service.list_categories(db)
 
 @router.get("/{category_id}", response_model=CategoryResponse,)
-async def get_category(category_id: UUID, db: Session = Depends(get_db),):
+async def get_category(category_id: UUID, db: AsyncSession = Depends(get_async_db),):
     
-    return category_service.get_category(
+    return await category_service.get_category(
         db=db,
         category_id=category_id,
     )
 
 @router.patch("/{category_id}", response_model=CategoryResponse,)
-
-async def update_category(category_id: UUID, category_data: CategoryUpdate, db: Session = Depends(get_db),):
+async def update_category(category_id: UUID, category_data: CategoryUpdate, db: AsyncSession = Depends(get_async_db),):
     
-    return category_service.update_category(
+    return await category_service.update_category(
         db=db,
         category_id=category_id,
         category_data=category_data,
     )
 
 @router.delete("/{category_id}", status_code=status.HTTP_204_NO_CONTENT,)
-async def delete_category(category_id: UUID, db: Session = Depends(get_db),):
+async def delete_category(category_id: UUID, db: AsyncSession = Depends(get_async_db),):
 
-    category_service.delete_category(
+    await category_service.delete_category(
         db=db,
         category_id=category_id,
     )

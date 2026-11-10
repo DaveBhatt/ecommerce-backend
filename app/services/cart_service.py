@@ -2,7 +2,8 @@ from decimal import Decimal
 from uuid import UUID
 from app.core.logging import logger
 
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from app.models.cart import Cart
 from app.models.cart_item import CartItem
 
@@ -17,16 +18,16 @@ class CartService:
     def __init__(self):
 
         """
-        Dependency Injection 
+        Dependency Injection
         Using __init__ makes it easier to swap implementations
         later and improves testability.
         """
         self.cart_repository = cart_repository
         self.product_repository = product_repository
 
-    def get_or_create_cart(self, db: Session, user_id: UUID,) -> Cart:
+    async def get_or_create_cart(self, db: AsyncSession, user_id: UUID,) -> Cart:
 
-        cart = self.cart_repository.get_by_user_id(
+        cart = await self.cart_repository.get_by_user_id(
                 db=db,
                 user_id=user_id,
         )
@@ -37,7 +38,7 @@ class CartService:
                 user_id,
             )
             return cart
-        
+
         logger.info(
             "Creating new cart for user %s",
             user_id,
@@ -45,27 +46,30 @@ class CartService:
 
         cart = Cart(user_id=user_id,)
 
-        return self.cart_repository.create(
+        return await self.cart_repository.create(
             db=db,
             cart=cart,
         )
-    
-    def get_cart(self, db: Session, user_id: UUID,) -> dict:
+
+    async def get_cart(self, db: AsyncSession, user_id: UUID,) -> dict:
 
         logger.info(
             "Fetching cart for user %s",
             user_id,
         )
 
-        cart = self.get_or_create_cart(
+        await self.get_or_create_cart(
             db=db,
             user_id=user_id,
         )
 
-        cart = self.cart_repository.get_cart_with_items(
+        cart = await self.cart_repository.get_cart_with_items(
             db=db,
             user_id=user_id,
         )
+
+        if not cart:
+            raise CartNotFoundError("Cart not found.")
 
         return {
             "id": cart.id,
@@ -76,21 +80,24 @@ class CartService:
             "created_at": cart.created_at,
             "updated_at": cart.updated_at,
         }
-    
-    def calculate_total_items(self, cart: Cart,) -> int:
-        
+
+    @staticmethod
+    def calculate_total_items(cart: Cart,) -> int:
+
         return sum(
             item.quantity for item in cart.cart_items
         )
-    
-    def calculate_total_price(self, cart: Cart,) -> Decimal:
-        
+
+    @staticmethod
+    def calculate_total_price(cart: Cart,) -> Decimal:
+
         return sum(
-            (item.quantity * item.product.price for item in cart.cart_items),
+            (item.quantity * item.product.price
+             for item in cart.cart_items),
             start=Decimal("0.00"),
         )
 
-    def add_item(self, db: Session, user_id: UUID, product_id: UUID, quantity: int,) -> dict:
+    async def add_item(self, db: AsyncSession, user_id: UUID, product_id: UUID, quantity: int,) -> dict:
 
         """
         POST /cart/items
@@ -136,13 +143,13 @@ class CartService:
         )
 
         # Get or create the user's cart
-        cart = self.get_or_create_cart(
+        cart = await self.get_or_create_cart(
             db=db,
             user_id=user_id,
         )
 
         # Fetch the product
-        product = self.product_repository.get_by_id(
+        product = await self.product_repository.get_by_id(
             db=db,
             product_id=product_id,
         )
@@ -173,7 +180,7 @@ class CartService:
             raise InsufficientStockError()
 
         # Check whether the product is already in the cart
-        cart_item = self.cart_repository.get_cart_item(
+        cart_item = await self.cart_repository.get_cart_item(
             db=db,
             cart_id=cart.id,
             product_id=product.id,
@@ -194,7 +201,7 @@ class CartService:
 
             cart_item.quantity = new_quantity
 
-            self.cart_repository.save(db)
+            await self.cart_repository.save(db)
 
             logger.info(
                 "Updated quantity for product %s in cart %s to %s",
@@ -211,7 +218,7 @@ class CartService:
                 quantity=quantity,
             )
 
-            self.cart_repository.create_cart_item(
+            await self.cart_repository.create_cart_item(
                 db=db,
                 cart_item=cart_item,
             )
@@ -222,12 +229,12 @@ class CartService:
                 cart.id,
             )
 
-        return self.get_cart(
+        return await self.get_cart(
             db=db,
             user_id=user_id,
         )
 
-    def update_quantity(self, db: Session, user_id: UUID, cart_item_id: UUID, quantity: int,) -> dict:
+    async def update_quantity(self, db: AsyncSession, user_id: UUID, cart_item_id: UUID, quantity: int,) -> dict:
 
         """
         PATCH /cart/items/{id}
@@ -263,7 +270,7 @@ class CartService:
          Save Changes
               ▼
          Return Cart
-        
+
         """
 
         logger.info(
@@ -272,7 +279,7 @@ class CartService:
             quantity,
         )
 
-        cart_item = self.cart_repository.get_cart_item_by_id(
+        cart_item = await self.cart_repository.get_cart_item_by_id(
             db=db,
             cart_item_id=cart_item_id,
         )
@@ -286,7 +293,7 @@ class CartService:
 
         # Quantity = 0 means remove the item from the cart
         if quantity == 0:
-            self.cart_repository.remove_item(
+            await self.cart_repository.remove_item(
                 db=db,
                 cart_item=cart_item,
             )
@@ -296,7 +303,7 @@ class CartService:
                 cart_item_id,
             )
 
-            return self.get_cart(
+            return await self.get_cart(
                 db=db,
                 user_id=user_id,
             )
@@ -307,7 +314,7 @@ class CartService:
 
         cart_item.quantity = quantity
 
-        self.cart_repository.save(db)
+        await self.cart_repository.save(db)
 
         logger.info(
             "Updated quantity for cart item %s to %s",
@@ -315,20 +322,20 @@ class CartService:
             quantity,
         )
 
-        return self.get_cart(
+        return await self.get_cart(
             db=db,
             user_id=user_id,
         )
 
 
-    def remove_item(self, db: Session, user_id: UUID, cart_item_id: UUID,) -> dict:
+    async def remove_item(self, db: AsyncSession, user_id: UUID, cart_item_id: UUID,) -> dict:
 
         logger.info(
             "Removing cart item %s",
             cart_item_id,
         )
 
-        cart_item = self.cart_repository.get_cart_item_by_id(
+        cart_item = await self.cart_repository.get_cart_item_by_id(
             db=db,
             cart_item_id=cart_item_id,
         )
@@ -340,7 +347,7 @@ class CartService:
         if cart_item.cart.user_id != user_id:
             raise CartItemNotFoundError()
 
-        self.cart_repository.remove_item(
+        await self.cart_repository.remove_item(
             db=db,
             cart_item=cart_item,
         )
@@ -350,40 +357,48 @@ class CartService:
             cart_item_id,
         )
 
-        return self.get_cart(
+        return await self.get_cart(
             db=db,
             user_id=user_id,
         )
 
 
-    def clear_cart(self, db: Session, user_id: UUID,) -> dict:
+    async def clear_cart(self, db: AsyncSession, user_id: UUID,) -> dict:
 
         logger.info(
             "Clearing cart for user %s",
             user_id,
         )
 
-        cart = self.get_or_create_cart(
+        await self.get_or_create_cart(
             db=db,
             user_id=user_id,
-        )   
+        )
         # This is a performance optimization. We don't need to fetch the cart from the database if it doesn't exist.
 
-        self.cart_repository.clear_cart(
+        # Load the cart items explicitly before accessing the relationship.
+        cart = await self.cart_repository.get_cart_with_items(
+            db=db,
+            user_id=user_id,
+        )
+        if not cart:
+            raise CartNotFoundError("Cart not found.")
+
+        await self.cart_repository.clear_cart(
             db=db,
             cart=cart,
         )
+        await db.commit()
 
         logger.info(
             "Cart cleared for user %s",
             user_id,
         )
 
-        return self.get_cart(
+        return await self.get_cart(
             db=db,
             user_id=user_id,
         )
-        
+
+
 cart_service = CartService()
-
-

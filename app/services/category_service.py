@@ -1,7 +1,7 @@
 from uuid import UUID
 
 from fastapi import HTTPException, status 
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.category import Category
 from app.repositories.category_repository import CategoryRepository, category_repository
@@ -13,7 +13,7 @@ class CategoryService:
     def __init__(self, category_repository: CategoryRepository,):
         self.category_repository = category_repository
 
-    def create_category(self, db: Session, category_data: CategoryCreate,) -> Category:
+    async def create_category(self, db: AsyncSession, category_data: CategoryCreate,) -> Category:
         """Responsibilities:
 
         Check if the name already exists.
@@ -24,7 +24,7 @@ class CategoryService:
 
         Notice that slug generation belongs in the service, not in the repository."""
 
-        existing_category = self.category_repository.get_by_name(
+        existing_category = await self.category_repository.get_by_name(
             db,
             category_data.name,
         )
@@ -41,12 +41,12 @@ class CategoryService:
             description=category_data.description,
         )
 
-        return self.category_repository.create(db, category)
+        return await self.category_repository.create(db, category)
     
 
-    def get_category(self, db: Session, category_id: UUID,) -> Category:
+    async def get_category(self, db: AsyncSession, category_id: UUID,) -> Category:
         
-        category = self.category_repository.get_by_id(
+        category = await self.category_repository.get_by_id(
             db,
             category_id,
         )
@@ -60,18 +60,18 @@ class CategoryService:
         return category
     
 
-    def list_categories(self, db: Session,) -> list[Category]:
+    async def list_categories(self, db: AsyncSession,) -> list[Category]:
         
-        return self.category_repository.get_all(db)
+        return await self.category_repository.get_all(db)
 
 
-    def update_category(self, db: Session, category_id: UUID, category_data: CategoryUpdate,) -> Category:
+    async def update_category(self, db: AsyncSession, category_id: UUID, category_data: CategoryUpdate,) -> Category:
 
-        category = self.get_category(db, category_id,)
+        category = await self.get_category(db, category_id,)
         update_data = category_data.model_dump(exclude_unset=True,)
 
         if "name" in update_data:
-            existing_category = self.category_repository.get_by_name(
+            existing_category = await self.category_repository.get_by_name(
                 db,
                 update_data["name"],
             )
@@ -87,20 +87,20 @@ class CategoryService:
         for field, value in update_data.items():
             setattr(category, field, value)
 
-        return self.category_repository.update(
+        return await self.category_repository.update(
             db,
             category,
         )
     
 
-    def delete_category(self, db: Session, category_id: UUID,) -> Category:
+    async def delete_category(self, db: AsyncSession, category_id: UUID,) -> Category:
         
-        category = self.get_category(
+        category = await self.get_category(
             db,
             category_id,
         )
 
-        return self.category_repository.delete(db, category,)
+        return await self.category_repository.delete(db, category,)
     
 
 category_service = CategoryService(category_repository)

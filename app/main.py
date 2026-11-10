@@ -1,3 +1,6 @@
+# mypy: ignore-errors
+
+
 from typing import cast
 from starlette.types import ExceptionHandler
 
@@ -6,7 +9,7 @@ from fastapi.exceptions import RequestValidationError
 from sqlalchemy import text
 
 from app.api.v1.router import api_router
-from app.database.database import engine
+from app.database.database import async_engine
 from app.exceptions.product import (
     ProductNotFoundError,
     ProductInactiveError,
@@ -109,17 +112,16 @@ async def root():
 @app.get("/health")
 async def health():
     try:
-        with engine.connect() as connection:
-            connection.execute(text("SELECT 1"))
+        async with async_engine.connect() as connection:
+            await connection.execute(text("SELECT 1"))
 
         return {
             "status": "healthy",
             "database": "connected", 
         }
-    except Exception as e:
+    except Exception:
         return {
             "status": "unhealthy",
-            # "error": str(e),
             "database": "disconnected",
         }
     

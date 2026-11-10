@@ -1,32 +1,55 @@
 from uuid import UUID
 from decimal import Decimal
-from sqlalchemy.orm import Session
-from sqlalchemy import or_
+
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select, or_, func
+
 from app.models.product import Product
 
 class ProductRepository:
 
-    def create(self, db: Session, product: Product,) -> Product:
+    async def create(self, db: AsyncSession, product: Product,) -> Product:
+
         db.add(product)
-        db.commit()
-        db.refresh(product)
+        await db.commit()
+        await db.refresh(product)
         return product
-    
-    def get_by_id(self, db: Session, product_id: UUID,) -> Product | None:
-        return(db.query(Product).filter(Product.id == product_id).first())
-    
-    def get_by_slug(self, db: Session, slug: str,)  -> Product | None:
-        return(db.query(Product).filter(Product.slug == slug).first())
-    
-    def get_by_sku(self, db: Session, sku: str,) -> Product | None:
-        return(db.query(Product).filter(Product.sku == sku).first())
-    
-    def get_by_name(self, db: Session, name: str,) -> Product | None:
-        return(db.query(Product).filter(Product.name == name).first())
-    
-    def get_all(
+
+    async def get_by_id(self, db: AsyncSession, product_id: UUID,) -> Product | None:
+
+        result = await db.execute(
+            select(Product).where(Product.id == product_id)
+        )
+
+        return result.scalar_one_or_none()
+
+    async def get_by_slug(self, db: AsyncSession, slug: str,)  -> Product | None:
+
+        result = await db.execute(
+            select(Product).where(Product.slug == slug)
+        )
+
+        return result.scalar_one_or_none()
+
+    async def get_by_sku(self, db: AsyncSession, sku: str,) -> Product | None:
+
+        result = await db.execute(
+            select(Product).where(Product.sku == sku)
+        )
+
+        return result.scalar_one_or_none()
+
+    async def get_by_name(self, db: AsyncSession, name: str,) -> Product | None:
+
+        result = await db.execute(
+            select(Product).where(Product.name == name)
+        )
+
+        return result.scalar_one_or_none()
+
+    async def get_all(
             self,
-            db: Session,
+            db: AsyncSession,
             skip: int = 0,
             limit: int = 10,
             category_id: UUID | None = None,
@@ -35,7 +58,7 @@ class ProductRepository:
             search: str | None = None,
             sort: str | None = None,
     ) -> list[Product]:
-        
+
         query = self._build_query(
             db=db,
             category_id=category_id,
@@ -43,12 +66,12 @@ class ProductRepository:
             max_price=max_price,
             search=search,
         )
-        
+
         sort_columns = {
             "name": Product.name,
             "price": Product.price,
             "created_at": Product.created_at,
-        } 
+        }
 
         if sort:
             descending = sort.startswith("-")
@@ -63,33 +86,35 @@ class ProductRepository:
         else:
             query = query.order_by(Product.created_at.desc())
 
-        return(
-               query
-               .offset(skip)
-               .limit(limit)
-               .all()
-            )
-    
-    def update(self, db: Session, product: Product,) -> Product:
-        db.commit()
-        db.refresh(product)
+        query = query.offset(skip).limit(limit)
+        result = await db.execute(query)
+
+        return list(result.scalars().all())
+
+    async def update(self, db: AsyncSession, product: Product,) -> Product:
+
+        await db.commit()
+        await db.refresh(product)
+
         return product
-    
-    def delete(self, db: Session, product: Product,) -> Product:
+
+    async def delete(self, db: AsyncSession, product: Product,) -> Product:
+
         product.is_active = False
-        db.commit()
-        db.refresh(product)
+        await db.commit()
+        await db.refresh(product)
+
         return product
-    
-    def count(
-            self, 
-            db: Session, 
+
+    async def count(
+            self,
+            db: AsyncSession,
             category_id: UUID | None = None,
             min_price: Decimal | None = None,
             max_price: Decimal | None = None,
             search: str | None = None,
     ) -> int:
-        
+
         query  = self._build_query(
             db=db,
             category_id=category_id,
@@ -98,17 +123,20 @@ class ProductRepository:
             search=search,
         )
 
-        return query.count()
-    
+        count_query = select(func.count()).select_from(query.subquery())
+        result = await db.execute(count_query)
+
+        return result.scalar_one()
+
     def _build_query(
             self,
-            db: Session,
+            db: AsyncSession,
             category_id: UUID | None = None,
             min_price: Decimal | None = None,
             max_price: Decimal | None = None,
             search: str | None = None,
     ):
-        
+
         """
             _build_query()
                 │
@@ -118,28 +146,29 @@ class ProductRepository:
            ┌────┴────┐
            ▼         ▼
         get_all()   count()
-        
+
         """
 
-        query = db.query(Product).filter(Product.is_active.is_(True))
+        query = select(Product).where(Product.is_active.is_(True))
 
         if category_id is not None:
-            query = query.filter(Product.category_id == category_id)
+            query = query.where(Product.category_id == category_id)
 
         if min_price is not None:
-            query = query.filter(Product.price >= min_price)
+            query = query.where(Product.price >= min_price)
 
         if max_price is not None:
-            query = query.filter(Product.price <= max_price)
+            query = query.where(Product.price <= max_price)
 
         if search:
-            query = query.filter(
+            query = query.where(
                 or_(
                     Product.name.ilike(f"%{search}%"),
                     Product.description.ilike(f"%{search}%"),
                     Product.sku.ilike(f"%{search}%"),
                 )
             )
+
         return query
 
 
