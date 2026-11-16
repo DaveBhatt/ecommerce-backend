@@ -4,7 +4,8 @@
 from typing import cast
 from starlette.types import ExceptionHandler
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI
+from starlette.exceptions import HTTPException as StarletteHTTPException
 from fastapi.exceptions import RequestValidationError
 from sqlalchemy import text
 
@@ -89,7 +90,7 @@ app.add_exception_handler(
 
 # Register global exception handlers
 app.add_exception_handler(
-    HTTPException,
+    StarletteHTTPException,
     http_exception_handler,
 )
 
