@@ -6,10 +6,15 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.database.session import get_async_db
 from app.schemas.category import CategoryCreate, CategoryUpdate, CategoryResponse
 from app.services.category_service import category_service
+from app.api.responses import COMMON_ERROR_RESPONSES, problem_response
 
 router = APIRouter(
     prefix="/categories",
     tags=["Categories"],
+    responses={
+        **COMMON_ERROR_RESPONSES,
+        404: problem_response("Category not found."),
+    },
 )
 
 

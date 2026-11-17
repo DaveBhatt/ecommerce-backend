@@ -10,11 +10,17 @@ from app.models.user import User
 from app.schemas.product import ProductCreate, ProductResponse, ProductUpdate
 from app.schemas.pagination import PaginatedResponse
 from app.services.product_service import product_service
+from app.api.responses import COMMON_ERROR_RESPONSES, problem_response
 
 
 router = APIRouter(
     prefix="/products",
     tags=["Products"],
+    responses={
+        **COMMON_ERROR_RESPONSES,
+        404: problem_response("Product not found."),
+        400: problem_response("The product request could not be processed."),
+    },
 )
 
 @router.post("", response_model=ProductResponse, status_code=status.HTTP_201_CREATED,)

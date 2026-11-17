@@ -8,11 +8,18 @@ from app.database.session import get_async_db
 from app.models.user import User
 from app.schemas.cart import CartResponse, AddCartItemRequest, UpdateCartItemRequest
 from app.services.cart_service import cart_service
+from app.api.responses import COMMON_ERROR_RESPONSES, problem_response
 
 
 router = APIRouter(
     prefix="/cart",
     tags=["Cart"],
+    responses={
+        **COMMON_ERROR_RESPONSES,
+        401: problem_response("Authentication required."),
+        404: problem_response("Cart or cart item not found."),
+        400: problem_response("The cart request could not be processed."),
+    },
 )
 
 @router.get("", response_model=CartResponse, status_code=status.HTTP_200_OK,)

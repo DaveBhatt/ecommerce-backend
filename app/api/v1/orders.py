@@ -9,10 +9,17 @@ from app.models.user import User
 from app.schemas.order import CreateOrderRequest, OrderResponse, OrderSummaryResponse
 from app.schemas.pagination import PaginationParams, PaginatedResponse
 from app.services.order_service import order_service
+from app.api.responses import COMMON_ERROR_RESPONSES, problem_response
 
 router = APIRouter(
     prefix="/orders",
     tags=["Orders"],
+    responses={
+        **COMMON_ERROR_RESPONSES,
+        401: problem_response("Authentication required."),
+        404: problem_response("Order not found."),
+        400: problem_response("The order request could not be processed."),
+    },
 )
 @router.post("", response_model=OrderResponse, status_code=status.HTTP_201_CREATED,)
 async def create_order(order_data: CreateOrderRequest, current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_async_db),):
