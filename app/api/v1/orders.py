@@ -21,7 +21,17 @@ router = APIRouter(
         400: problem_response("The order request could not be processed."),
     },
 )
-@router.post("", response_model=OrderResponse, status_code=status.HTTP_201_CREATED,)
+@router.post(
+    "",
+    response_model=OrderResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Create a new order",
+    description=(
+        "Create a new order for the currently authenticated user. "
+        "The order is generated from the user's shopping cart using "
+        "the supplied order details. Returns the newly created order."
+    ),
+)
 async def create_order(order_data: CreateOrderRequest, current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_async_db),):
 
     return await order_service.create_order(
@@ -30,7 +40,17 @@ async def create_order(order_data: CreateOrderRequest, current_user: User = Depe
         order_data=order_data,
     )
 
-@router.get("", response_model=PaginatedResponse[OrderSummaryResponse], status_code=status.HTTP_200_OK,)
+@router.get(
+    "",
+    response_model=PaginatedResponse[OrderSummaryResponse],
+    status_code=status.HTTP_200_OK,
+    summary="List the current user's orders",
+    description=(
+        "Retrieve a paginated list of orders belonging to the currently "
+        "authenticated user. Supports pagination through page and size "
+        "query parameters. Returns order summaries and pagination metadata."
+    ),
+)
 async def get_orders(pagination: PaginationParams = Depends(), current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_async_db),):
 
     return await order_service.get_user_orders(
@@ -40,7 +60,17 @@ async def get_orders(pagination: PaginationParams = Depends(), current_user: Use
         size=pagination.size,
     )
 
-@router.get("/{order_id}", response_model=OrderResponse, status_code=status.HTTP_200_OK,)
+@router.get(
+    "/{order_id}",
+    response_model=OrderResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Get an order by ID",
+    description=(
+        "Retrieve the details of a specific order using its UUID. "
+        "Users can only access orders belonging to their own account. "
+        "Returns the complete order details if the order exists."
+    ),
+)
 async def get_order(order_id: UUID, current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_async_db),):
 
     return await order_service.get_order(
@@ -49,7 +79,17 @@ async def get_order(order_id: UUID, current_user: User = Depends(get_current_use
         user_id=current_user.id,
     )
 
-@router.post("/{order_id}/cancel", response_model=OrderResponse, status_code=status.HTTP_200_OK,)
+@router.post(
+    "/{order_id}/cancel",
+    response_model=OrderResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Cancel an order",
+    description=(
+        "Cancel an existing order belonging to the currently authenticated "
+        "user. The order must satisfy the application's cancellation rules. "
+        "Returns the updated order after successful cancellation."
+    ),
+)
 async def cancel_order(order_id: UUID, current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_async_db),):
 
     return await order_service.cancel_order(

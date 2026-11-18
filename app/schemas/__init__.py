@@ -35,3 +35,5 @@ from .pagination import (
     PaginationParams,
     PaginatedResponse,
 )
+
+from .error import ProblemDetails

@@ -14,13 +14,19 @@ router = APIRouter(
 )
 
 @router.post(
-        "/register",
-        response_model=UserResponse,
-        status_code=status.HTTP_201_CREATED,
-        responses={
-            409: problem_response("Email or username already exists."),
-        }
-    )
+    "/register",
+    response_model=UserResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Register a new user",
+    description=(
+        "Create a new user account using the supplied registration details. "
+        "The email address and username must be unique. "
+        "Returns the newly created user profile."
+    ),
+    responses={
+        409: problem_response("Email or username already exists."),
+    },
+)
 async def register(user: UserCreate, db: AsyncSession = Depends(get_async_db),):
 
     try:
@@ -39,12 +45,18 @@ async def register(user: UserCreate, db: AsyncSession = Depends(get_async_db),):
         )
 
 @router.post(
-        "/login",
-        response_model=Token,
-        responses={
-            401: problem_response("Invalid email or password."),
-        }
-    )
+    "/login",
+    response_model=Token,
+    summary="Authenticate a user",
+    description=(
+        "Authenticate an existing user using their email address and password. "
+        "Returns a JWT access token that can be used to access protected "
+        "API endpoints through Bearer authentication."
+    ),
+    responses={
+        401: problem_response("Invalid email or password."),
+    },
+)
 async def login(credentials: UserLogin, db: AsyncSession = Depends(get_async_db),):
 
     try:

@@ -46,6 +46,79 @@ setup_logging()
 
 app = FastAPI(
     title="E-commerce Backend API",
+    description="""
+    A production-oriented E-commerce Backend API built with Python and FastAPI.
+
+    ## Overview
+
+    This application provides backend functionality for an e-commerce platform,
+    including user authentication, product and category management, shopping
+    carts, order processing, and inventory management.
+
+    ## Architecture
+
+    - **API Layer:** Handles HTTP requests, validation, and responses.
+    - **Service Layer:** Implements business logic and transaction workflows.
+    - **Repository Layer:** Handles database access and queries.
+    - **Database Layer:** Uses PostgreSQL with SQLAlchemy 2.0 Async ORM.
+
+    ## Authentication
+
+    Protected endpoints require JWT Bearer authentication.
+
+    ## Error Handling
+
+    API errors follow RFC 9457 Problem Details and use the
+    `application/problem+json` media type.
+
+    ## API Versioning
+
+    The current API is available under `/api/v1`.
+    """,
+    version="0.1.0",
+    openapi_tags=[
+        {
+            "name": "Authentication",
+            "description": (
+                "User registration and authentication. "
+                "Provides JWT access tokens for protected API endpoints."
+            ),
+        },
+        {
+            "name": "Users",
+            "description": (
+                "Authenticated user operations, including retrieving "
+                "the current user's profile."
+            ),
+        },
+        {
+            "name": "Products",
+            "description": (
+                "Product catalog management, including product creation, "
+                "retrieval, updates, deletion, and availability."
+            ),
+        },
+        {
+            "name": "Categories",
+            "description": (
+                "Manage product categories and retrieve category information."
+            ),
+        },
+        {
+            "name": "Cart",
+            "description": (
+                "Shopping cart operations, including adding products, "
+                "updating quantities, removing items, and clearing the cart."
+            ),
+        },
+        {
+            "name": "Orders",
+            "description": (
+                "Order processing, order history, order retrieval, "
+                "and order cancellation."
+            ),
+        },
+    ],
 )
 
 app.add_exception_handler(

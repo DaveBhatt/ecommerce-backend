@@ -15,6 +15,21 @@ class ProductBase(BaseModel):
 class ProductCreate(ProductBase):
     sku: str = Field(min_length=3, max_length=100, description="Stock Keeping Unit",)
 
+    model_config = ConfigDict(
+        json_schema_extra={
+            "examples": [
+                {
+                    "name": "Wireless Mouse",
+                    "description": "Ergonomic wireless mouse with adjustable DPI.",
+                    "price": "799.00",
+                    "stock_quantity": 50,
+                    "category_id": "550e8400-e29b-41d4-a716-446655440000",
+                    "sku": "ELEC-MOUSE-001",
+                }
+            ]
+        }
+    )
+
 class ProductUpdate(BaseModel):
     name: str | None = Field(default=None, min_length=2, max_length=255,)
     description: str | None = None
@@ -24,13 +39,44 @@ class ProductUpdate(BaseModel):
     category_id: UUID | None = None
     is_active: bool | None = None
 
+    model_config = ConfigDict(
+        json_schema_extra={
+            "examples": [
+                {
+                    "name": "Wireless Mouse Pro",
+                    "price": "999.00",
+                    "stock_quantity": 75,
+                }
+            ]
+        }
+    )
+
 
 class ProductResponse(ProductBase):
-    model_config = ConfigDict(from_attributes=True)
-    
     id: UUID
     slug: str
     sku: str
     is_active: bool
     created_at: datetime
     updated_at: datetime
+
+    model_config = ConfigDict(
+        from_attributes=True,
+        json_schema_extra={
+            "examples": [
+                {
+                    "id": "550e8400-e29b-41d4-a716-446655440001",
+                    "name": "Wireless Mouse",
+                    "description": "Ergonomic wireless mouse with adjustable DPI.",
+                    "price": "799.00",
+                    "stock_quantity": 50,
+                    "category_id": "550e8400-e29b-41d4-a716-446655440000",
+                    "slug": "wireless-mouse",
+                    "sku": "ELEC-MOUSE-001",
+                    "is_active": True,
+                    "created_at": "2026-11-18T10:00:00Z",
+                    "updated_at": "2026-11-18T10:00:00Z",
+                }
+            ]
+        },
+    )

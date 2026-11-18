@@ -22,7 +22,16 @@ router = APIRouter(
     },
 )
 
-@router.get("", response_model=CartResponse, status_code=status.HTTP_200_OK,)
+@router.get(
+    "",
+    response_model=CartResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Get the current user's cart",
+    description=(
+        "Retrieve the shopping cart belonging to the currently authenticated user. "
+        "Returns the cart and its associated items."
+    ),
+)
 async def get_cart(current_user: User = Depends(get_current_user), db: AsyncSession =  Depends(get_async_db),):
 
     return await cart_service.get_cart(
@@ -30,7 +39,17 @@ async def get_cart(current_user: User = Depends(get_current_user), db: AsyncSess
         user_id=current_user.id,
     )
 
-@router.post("/items", response_model=CartResponse, status_code=status.HTTP_200_OK,)
+@router.post(
+    "/items",
+    response_model=CartResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Add an item to the cart",
+    description=(
+        "Add a product to the currently authenticated user's shopping cart. "
+        "Specify the product UUID and quantity. "
+        "The operation validates product availability and stock."
+    ),
+)
 async def add_item(request: AddCartItemRequest, current_user: User = Depends(get_current_user), db: AsyncSession =  Depends(get_async_db),):
 
     return await cart_service.add_item(
@@ -40,7 +59,17 @@ async def add_item(request: AddCartItemRequest, current_user: User = Depends(get
         quantity=request.quantity,
     )
 
-@router.patch("/items/{cart_item_id}", response_model=CartResponse, status_code=status.HTTP_200_OK,)
+@router.patch(
+    "/items/{cart_item_id}",
+    response_model=CartResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Update cart item quantity",
+    description=(
+        "Update the quantity of an existing item in the authenticated user's cart. "
+        "Provide the cart item UUID and the new quantity. "
+        "Stock availability is validated."
+    ),
+)
 async def update_cart_item(cart_item_id: UUID, request: UpdateCartItemRequest, db: AsyncSession = Depends(get_async_db), current_user: User = Depends(get_current_user),):
 
     return await cart_service.update_quantity(
@@ -50,7 +79,16 @@ async def update_cart_item(cart_item_id: UUID, request: UpdateCartItemRequest, d
         quantity=request.quantity,
     )
 
-@router.delete("/items/{cart_item_id}", response_model=CartResponse, status_code=status.HTTP_200_OK,)
+@router.delete(
+    "/items/{cart_item_id}",
+    response_model=CartResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Remove an item from the cart",
+    description=(
+        "Remove a specific item from the authenticated user's shopping cart "
+        "using its cart item UUID. Returns the updated cart."
+    ),
+)
 async def remove_cart_item(cart_item_id: UUID, db: AsyncSession = Depends(get_async_db), current_user: User = Depends(get_current_user),):
 
     return await cart_service.remove_item(
@@ -59,7 +97,16 @@ async def remove_cart_item(cart_item_id: UUID, db: AsyncSession = Depends(get_as
         cart_item_id=cart_item_id,
     )
 
-@router.delete("", response_model=CartResponse, status_code=status.HTTP_200_OK,)
+@router.delete(
+    "",
+    response_model=CartResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Clear the shopping cart",
+    description=(
+        "Remove all items from the authenticated user's shopping cart. "
+        "Return the updated cart."
+    ),
+)
 async def clear_cart(db: AsyncSession = Depends(get_async_db), current_user: User = Depends(get_current_user),):
 
     return await cart_service.clear_cart(

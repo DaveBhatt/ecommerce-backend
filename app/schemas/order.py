@@ -15,13 +15,38 @@ class OrderStatus(str, Enum):
     CANCELLED = "CANCELLED"
 
 class OrderItemResponse(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
-
     id: UUID
     product: ProductResponse # This is the product that was ordered.
     quantity: int
     unit_price: Decimal
     subtotal: Decimal
+
+    model_config = ConfigDict(
+        from_attributes=True,
+        json_schema_extra={
+            "examples": [
+                {
+                    "id": "550e8400-e29b-41d4-a716-446655440006",
+                    "product": {
+                        "id": "550e8400-e29b-41d4-a716-446655440001",
+                        "name": "Wireless Mouse",
+                        "description": "Ergonomic wireless mouse with adjustable DPI.",
+                        "price": "799.00",
+                        "stock_quantity": 50,
+                        "category_id": "550e8400-e29b-41d4-a716-446655440000",
+                        "slug": "wireless-mouse",
+                        "sku": "ELEC-MOUSE-001",
+                        "is_active": True,
+                        "created_at": "2026-11-18T10:00:00Z",
+                        "updated_at": "2026-11-18T10:00:00Z",
+                    },
+                    "quantity": 2,
+                    "unit_price": "799.00",
+                    "subtotal": "1598.00",
+                }
+            ]
+        },
+    )
 
 class CreateOrderRequest(BaseModel):
 
@@ -43,9 +68,17 @@ class CreateOrderRequest(BaseModel):
 
         return value
 
-class OrderResponse(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
+    model_config = ConfigDict(
+        json_schema_extra={
+            "examples": [
+                {
+                    "shipping_address": "432 Main Street, Parkson Boulevard, New Delhi, India"
+                }
+            ]
+        }
+    )
 
+class OrderResponse(BaseModel):
     id: UUID
     user_id: UUID
     status: OrderStatus
@@ -55,10 +88,60 @@ class OrderResponse(BaseModel):
     created_at: datetime
     updated_at: datetime
 
-class OrderSummaryResponse(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
+    model_config = ConfigDict(
+        from_attributes=True,
+        json_schema_extra={
+            "examples": [
+                {
+                    "id": "550e8400-e29b-41d4-a716-446655440007",
+                    "user_id": "550e8400-e29b-41d4-a716-446655440005",
+                    "status": "PENDING",
+                    "total_amount": "1598.00",
+                    "shipping_address": "432 Main Street, Parkson Boulevard, New Delhi, India",
+                    "items": [
+                        {
+                            "id": "550e8400-e29b-41d4-a716-446655440006",
+                            "product": {
+                                "id": "550e8400-e29b-41d4-a716-446655440001",
+                                "name": "Wireless Mouse",
+                                "description": "Ergonomic wireless mouse with adjustable DPI.",
+                                "price": "799.00",
+                                "stock_quantity": 50,
+                                "category_id": "550e8400-e29b-41d4-a716-446655440000",
+                                "slug": "wireless-mouse",
+                                "sku": "ELEC-MOUSE-001",
+                                "is_active": True,
+                                "created_at": "2026-11-18T10:00:00Z",
+                                "updated_at": "2026-11-18T10:00:00Z",
+                            },
+                            "quantity": 2,
+                            "unit_price": "799.00",
+                            "subtotal": "1598.00",
+                        }
+                    ],
+                    "created_at": "2026-11-18T10:10:00Z",
+                    "updated_at": "2026-11-18T10:10:00Z",
+                }
+            ]
+        },
+    )
 
+class OrderSummaryResponse(BaseModel):
     id: UUID
     status: OrderStatus
     total_amount: Decimal
     created_at: datetime
+
+    model_config = ConfigDict(
+        from_attributes=True,
+        json_schema_extra={
+            "examples": [
+                {
+                    "id": "550e8400-e29b-41d4-a716-446655440007",
+                    "status": "PENDING",
+                    "total_amount": "1598.00",
+                    "created_at": "2026-11-18T10:10:00Z",
+                }
+            ]
+        },
+    )
