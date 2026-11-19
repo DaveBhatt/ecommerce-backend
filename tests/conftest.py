@@ -27,6 +27,15 @@ async def test_engine(anyio_backend):
     if test_url.database == development_url.database:
         raise RuntimeError("Test database must be different from development database.")
 
+    # Ensure tests connect to the expected PostgreSQL server.
+    if (
+        test_url.host != development_url.host
+        or (test_url.port or 5432) != (development_url.port or 5432)
+    ):
+        raise RuntimeError(
+            "Test database must use the same PostgreSQL server as the development database."
+        )
+
     if test_url.database != "ecommerce_test_db":
         raise RuntimeError("Unexpected test database. Expected ecommerce_test_db.")
 
