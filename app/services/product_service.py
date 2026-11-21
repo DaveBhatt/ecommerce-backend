@@ -103,6 +103,23 @@ class ProductService:
 
         return product
 
+    async def get_active_product_by_id(self, db: AsyncSession, product_id: UUID,) -> Product:
+
+        """Return an active product or raise 404."""
+
+        product = await self.get_product_by_id(
+            db=db,
+            product_id=product_id,
+        )
+
+        if not product.is_active:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Product not found.",
+            )
+
+        return product
+
     async def get_all_products(
             self,
             db: AsyncSession,

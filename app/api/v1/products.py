@@ -88,7 +88,7 @@ async def get_all_products(
 )
 async def get_product_by_id(product_id: UUID, db: AsyncSession = Depends(get_async_db),):
 
-    return await product_service.get_product_by_id(
+    return await product_service.get_active_product_by_id(
         db=db,
         product_id=product_id,
     )
