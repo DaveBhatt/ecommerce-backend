@@ -113,3 +113,68 @@ async def client(db):
     finally:
         app.dependency_overrides.clear()
         app.dependency_overrides.update(original_overrides)
+
+@pytest.fixture
+async def registered_user(client):
+    """Register and return a test user."""
+
+    user_payload = {
+        "email": "fixtureuser@example.com",
+        "username": "fixtureuser",
+        "password": "StrongPassword@123",
+        "full_name": "Fixture User",
+    }
+
+    response = await client.post(
+        "/api/v1/auth/register",
+        json=user_payload,
+    )
+
+    assert response.status_code == 201
+
+    return user_payload
+
+@pytest.fixture
+async def auth_headers(client, registered_user):
+    """Authenticate the registered user and return the JWT headers."""
+
+    response = await client.post(
+        "/api/v1/auth/login",
+        json={
+            "email": registered_user["email"],
+            "password": registered_user["password"],
+        },
+    )
+
+    assert response.status_code == 200
+
+    token = response.json()["access_token"]
+
+    return {
+        "Authorization": f"Bearer {token}",
+    }
+
+@pytest.fixture
+async def authenticated_client(client, auth_headers):
+    """Return an HTTP client with authentication headers set for the registered user."""
+
+    client.headers.update(auth_headers)
+
+    return client
+
+@pytest.fixture
+def category_payload():
+    return {
+        "name": "Fixture Electronics",
+        "description": "Category created by a reusable fixture.",
+    }
+
+
+@pytest.fixture
+async def test_category(client, category_payload):
+    response = await client.post(
+        "/api/v1/categories",
+        json=category_payload,
+    )
+    assert response.status_code == 201
+    return response.json()

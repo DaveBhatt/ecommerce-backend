@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from fastapi import HTTPException, status 
+from fastapi import HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.category import Category
@@ -34,7 +34,7 @@ class CategoryService:
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Category already exists.",
             )
-        
+
         category = Category(
             name=category_data.name,
             slug=generate_slug(category_data.name),
@@ -42,10 +42,10 @@ class CategoryService:
         )
 
         return await self.category_repository.create(db, category)
-    
+
 
     async def get_category(self, db: AsyncSession, category_id: UUID,) -> Category:
-        
+
         category = await self.category_repository.get_by_id(
             db,
             category_id,
@@ -56,12 +56,24 @@ class CategoryService:
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Category not found",
             )
-        
+
         return category
-    
+
+    async def get_active_category(self, db: AsyncSession, category_id: UUID,) -> Category:
+
+        category = await self.get_category(db, category_id)
+
+        if not category.is_active:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Category not found",
+            )
+
+        return category
+
 
     async def list_categories(self, db: AsyncSession,) -> list[Category]:
-        
+
         return await self.category_repository.get_all(db)
 
 
@@ -81,7 +93,7 @@ class CategoryService:
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail="Category already exists.",
                 )
-            
+
             category.slug = generate_slug(update_data["name"],)
 
         for field, value in update_data.items():
@@ -91,16 +103,16 @@ class CategoryService:
             db,
             category,
         )
-    
+
 
     async def delete_category(self, db: AsyncSession, category_id: UUID,) -> Category:
-        
+
         category = await self.get_category(
             db,
             category_id,
         )
 
         return await self.category_repository.delete(db, category,)
-    
+
 
 category_service = CategoryService(category_repository)

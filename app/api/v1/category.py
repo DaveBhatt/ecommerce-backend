@@ -87,7 +87,7 @@ async def get_categories(db: AsyncSession = Depends(get_async_db),):
 )
 async def get_category(category_id: UUID, db: AsyncSession = Depends(get_async_db),):
     
-    return await category_service.get_category(
+    return await category_service.get_active_category(
         db=db,
         category_id=category_id,
     )
