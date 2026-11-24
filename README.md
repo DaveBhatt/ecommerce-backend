@@ -7,6 +7,7 @@
 ![Pydantic](https://shields.io)
 ![Docker](https://shields.io)
 
+
 A production-oriented REST API for an e-commerce platform, built with Python and FastAPI. This project focuses on backend engineering practices, including layered architecture, asynchronous database operations, authentication, transaction handling, API validation, and automated testing.
 
 > **Project status:** Active development — core e-commerce functionality and API documentation implemented. Production-readiness improvements are ongoing.
