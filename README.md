@@ -1,5 +1,12 @@
 # E-commerce Backend API
 
+![Python](https://shields.io)
+![FastAPI](https://shields.io)
+![PostgreSQL](https://shields.io)
+![SQLAlchemy](https://shields.io)
+![Pydantic](https://shields.io)
+![Docker](https://shields.io)
+
 A production-oriented REST API for an e-commerce platform, built with Python and FastAPI. This project focuses on backend engineering practices, including layered architecture, asynchronous database operations, authentication, transaction handling, API validation, and automated testing.
 
 > **Project status:** Active development — core e-commerce functionality and API documentation implemented. Production-readiness improvements are ongoing.
@@ -23,23 +30,76 @@ A production-oriented REST API for an e-commerce platform, built with Python and
 
 The application follows a layered architecture that separates HTTP handling, business logic, and database operations.
 
-```text
-Client
-  |
-  v
-FastAPI Routers
-  |
-  v
-Service Layer
-  |
-  v
-Repository Layer
-  |
-  v
-SQLAlchemy Async ORM
-  |
-  v
-PostgreSQL
+```mermaid
+flowchart TD
+    Client([Client / Swagger UI]) -->|HTTP Request + JWT| Router[FastAPI Routers /api/v1]
+    Router -->|Pydantic v2 Validation| Deps[Dependencies & Auth]
+    Deps --> Service[Service Layer<br/>Business Logic & Transactions]
+    Service --> Repo[Repository Layer<br/>Async Queries & Eager Loading]
+    Repo -->|asyncpg| ORM[(SQLAlchemy 2.0 Async ORM)]
+    ORM <--> DB[(PostgreSQL Database)]
+    
+    Router -.->|On Error| Exc[Centralized Exception Handler<br/>RFC 9457 Problem Details]
+```
+
+### Database Schema
+
+```mermaid
+erDiagram
+    USERS ||--o| CARTS : "owns"
+    USERS ||--o{ ORDERS : "places"
+    CATEGORIES ||--o{ PRODUCTS : "contains"
+    CARTS ||--o{ CART_ITEMS : "has"
+    PRODUCTS ||--o{ CART_ITEMS : "added to"
+    ORDERS ||--o{ ORDER_ITEMS : "includes"
+    PRODUCTS ||--o{ ORDER_ITEMS : "ordered in"
+
+    USERS {
+        uuid id PK
+        string email UK
+        string hashed_password
+        boolean is_active
+        timestamp created_at
+    }
+    CATEGORIES {
+        uuid id PK
+        string name UK
+        string slug UK
+    }
+    PRODUCTS {
+        uuid id PK
+        uuid category_id FK
+        string name
+        string slug UK
+        decimal price
+        int stock_quantity
+        timestamp created_at
+    }
+    CARTS {
+        uuid id PK
+        uuid user_id FK
+        timestamp updated_at
+    }
+    CART_ITEMS {
+        uuid id PK
+        uuid cart_id FK
+        uuid product_id FK
+        int quantity
+    }
+    ORDERS {
+        uuid id PK
+        uuid user_id FK
+        string status
+        decimal total_amount
+        timestamp created_at
+    }
+    ORDER_ITEMS {
+        uuid id PK
+        uuid order_id FK
+        uuid product_id FK
+        int quantity
+        decimal unit_price
+    }
 ```
 
 ### Project Structure
