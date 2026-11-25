@@ -293,11 +293,9 @@ All versioned endpoints are mounted under `/api/v1`.
 ### 1. Clone the repository
 
 ```bash
-git clone <your-repository-url>
+git clone https://github.com/DaveBhatt/ecommerce-backend.git
 cd ecommerce_backend
 ```
-
-Replace `<your-repository-url>` with the URL of your Git repository.
 
 ### 2. Create and activate a virtual environment
 
