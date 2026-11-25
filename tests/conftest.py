@@ -178,3 +178,25 @@ async def test_category(client, category_payload):
     )
     assert response.status_code == 201
     return response.json()
+
+@pytest.fixture
+def product_payload(test_category):
+    return {
+        "name": "Fixture Wireless Mouse",
+        "description": "A product created by a reusable test fixture.",
+        "price": "799.00",
+        "category_id": test_category["id"],
+        "sku": "FIXTURE-MOUSE-001",
+        "stock_quantity": 50,
+    }
+
+@pytest.fixture
+async def test_product(authenticated_client, product_payload):
+    response = await authenticated_client.post(
+        "/api/v1/products",
+        json=product_payload,
+    )
+
+    assert response.status_code == 201
+
+    return response.json()
