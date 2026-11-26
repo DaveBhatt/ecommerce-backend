@@ -68,9 +68,15 @@ class OrderService:
              │
              ├── Create OrderItems
              │
-             ├── Decrease stock
+             ├── Deduct Inventory
              │
              ├── Clear cart
+             │
+             ├── Flush pending changes
+             │
+             ├── Reload order and its relationships
+             │
+             ├── Prepare the response
              │
              └── Commit transaction"""
 
@@ -178,18 +184,11 @@ class OrderService:
                 cart=cart,
             )
 
-            # Commit the transaction
-            await db.commit()
-            # db.refresh(order)
+            # Flush pending changes without committing the transaction.
+            # This ensures OrderItems and inventory updates are visible to subsequent queries.
+            await db.flush()
 
-            logger.info(
-                "Order created successfully. Order ID: %s User ID: %s Total Amount: %s",
-                order.id,
-                user_id,
-                total_amount,
-            )
-
-            # Reload the order with its relationship
+            # Reload the order with its relationship before committing
             created_order = await self.order_repository.get_by_id_for_user(
                 db=db,
                 order_id=order.id,
@@ -199,7 +198,20 @@ class OrderService:
             if created_order is None:
                 raise OrderNotFoundError()
 
-            return self._to_order_response(created_order)
+            # Prepare the response before committing
+            response = self._to_order_response(created_order)
+
+            # Commit only after all database operations and response preparations succeed.
+            await db.commit()
+
+            logger.info(
+                "Order created successfully. Order ID: %s User ID: %s Total Amount: %s",
+                order.id,
+                user_id,
+                total_amount,
+            )
+
+            return response
 
         except Exception:
             await db.rollback()
@@ -418,7 +430,7 @@ class OrderService:
             await db.rollback()
 
             logger.exception(
-                "Failed to cancer order %s",
+                "Failed to cancel order %s",
                 order_id,
             )
 

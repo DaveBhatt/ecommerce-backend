@@ -27,6 +27,16 @@ class CartRepository:
         return result.scalar_one_or_none()
 
     async def get_cart_with_items(self, db: AsyncSession, user_id: UUID,) -> Cart | None:
+        """
+        Retrieve a user's cart with its items and associated products.
+
+        selectinload() efficiently loads collection relationships using
+        separate SELECT queries, avoiding duplicated parent rows.
+
+        populate_existing=True refreshes an existing ORM object and its
+        eagerly loaded relationships instead of relying on potentially
+        stale identity-map state.
+        """
 
         result = await db.execute(
             select(Cart)
@@ -35,32 +45,10 @@ class CartRepository:
                 .selectinload(CartItem.product)
             )
             .where(Cart.user_id == user_id)
+            .execution_options(populate_existing=True)
         )
 
         return result.scalar_one_or_none()
-
-        # This query uses selectinload() to eagerly load the cart_items and their associated products in a single query.
-        # The .filter(Cart.user_id == user_id) ensures that we only fetch the cart for the specified user.
-        """
-        selectinload produces separate SQL queries using WHERE IN (...).
-
-        Good when:
-
-        one-to-many
-        collections
-        avoids duplicated rows
-
-        For shopping carts, selectinload() is generally the better choice.
-
-
-        Alternatively joinedload produces one large SQL JOIN.
-
-        Good when:
-
-        few rows
-        one-to-one relationships
-
-        """
 
     async def get_cart_item(self, db: AsyncSession, cart_id: UUID, product_id: UUID,) -> CartItem | None:
 
